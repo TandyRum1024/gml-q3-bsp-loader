@@ -6,14 +6,14 @@
 
 ------------
 
-![pic1](TandyRum1024.github.io\gml-q3-bsp\img1.png)
+![pic1](https://TandyRum1024.github.io/gml-q3-bsp/img1.png)
 
-![pic2](TandyRum1024.github.io\gml-q3-bsp\img2.png)
+![pic2](https://TandyRum1024.github.io/gml-q3-bsp/img2.png)
 
-![pic3](TandyRum1024.github.io\gml-q3-bsp\img3.png)
+![pic3](https://TandyRum1024.github.io/gml-q3-bsp/img3.png)
 
-![pic4](TandyRum1024.github.io\gml-q3-bsp\img4.png)
+![pic4](https://TandyRum1024.github.io/gml-q3-bsp/img4.png)
 
-![pic5](TandyRum1024.github.io\gml-q3-bsp\img5.png)
+![pic5](https://TandyRum1024.github.io/gml-q3-bsp/img5.png)
 
-![pic6](TandyRum1024.github.io\gml-q3-bsp\img6.png)
+![pic6](https://TandyRum1024.github.io/gml-q3-bsp/img6.png)
