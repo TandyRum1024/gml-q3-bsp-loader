@@ -2,7 +2,7 @@
 
 ###### (haha)
 
-*A primitive exampe for loading and rendering quake 3 .bsp files.*
+*A primitive example for loading and rendering quake 3 .bsp files.*
 
 ------------
 
