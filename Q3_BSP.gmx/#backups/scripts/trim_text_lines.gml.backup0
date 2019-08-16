@@ -1,0 +1,22 @@
+// 2019-08-17 00:22:36
+///trim_text_lines(text, start, end)
+/*
+    Trims the text
+*/
+
+var _lines = 0, _pos = string_pos(chr($0A), argument0);
+var _out = "", _str = argument0;
+
+while (_lines <= argument2 && _pos != 0)
+{
+    if (_lines >= argument1)
+    {
+        _out += string_copy(_str, 1, _pos);
+    }
+    
+    _lines++;
+    _str = string_delete(_str, 1, _pos);
+    _pos = string_pos(chr($0A), _str);
+}
+
+return _out;

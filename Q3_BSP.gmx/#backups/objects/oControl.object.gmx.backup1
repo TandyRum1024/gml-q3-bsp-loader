@@ -1,0 +1,86 @@
+// 2019-08-17 02:22:16
+#event create
+iui_init();
+
+map = zbsp_load_map("heatctf.zip");
+
+
+#event step
+iui_update_io();
+
+
+#event draw
+var _scrw = window_get_width(), _scrh = window_get_height();
+var _tophei = _scrh;//120;
+var _topmarginy = 50;
+
+draw_set_font(fntMain16);
+iui_begin();
+
+iui_rect(0, 0, _scrw, _tophei, iuHellaDark);
+ui_tabidx = iui_tab(0, 0, 80, 30, pack("MAP", "LOG", "DIRENTRY", "LUMPS"), ui_tabidx, 2);
+
+switch (ui_tabidx)
+{
+    case 0:
+        iui_label_shadow(10, _topmarginy, "FILENAME : " + map[? "name"], iuCream, 0, 1, c_black);
+        iui_label_shadow(10, _topmarginy + 20, "FILETYPE : " + map[? "type"], iuCream, 0, 1, c_black);
+        iui_label_shadow(10, _topmarginy + 40, "SUCCESS : " + string(map[? "success"]) + " | " + map[? "error"], iuCream, 0, 1, c_black);
+        break;
+        
+    case 1:
+        iui_label_shadow(10, _topmarginy, map[? "debug_log"], iuCream, 0, 1, c_black);
+        break;
+        
+    case 2:
+        var _off = 0;
+        for (var i=0; i<array_length_1d(global.BSPLumpNames); i++)
+        {
+            iui_label_shadow(10, _topmarginy + _off, "OFFSET : " + string(map[? global.BSPLumpNames[@i] + "-diroff"]), iuCream, 0, 1, c_black);
+            iui_label_shadow(10, _topmarginy + _off + 20, "LENGTH : " + string(map[? global.BSPLumpNames[@i] + "-dirlen"]), iuCream, 0, 1, c_black);
+            _off += 40;
+        }
+        break;
+        
+    case 3:
+        _topmarginy += 30;
+        
+        draw_set_font(fntMain8);
+        ui_lumptabidx = iui_tab(0, 30, 64, 30, global.BSPLumpNames, ui_lumptabidx, 1);
+        draw_set_font(fntMain16);
+        
+        switch (ui_lumptabidx)
+        {
+            case eBSPLUMP.ENTITIES:
+                var _drawtext = trim_text_lines(map[? "entities"], ui_entitiesscroll, ui_entitiesscroll + 20);
+                if (mouse_wheel_up()) ui_entitiesscroll = max(0, ui_entitiesscroll - 1);
+                if (mouse_wheel_down()) ui_entitiesscroll++;
+                
+                iui_label_shadow(10, _topmarginy, _drawtext, iuCream, 0, 1, c_black);
+                break;
+                
+            case eBSPLUMP.TEXTURES:
+                var _textures = map[? "textures-data"];
+                var _maptextures = map[? "data-textures-dir"];
+                
+                iui_label_shadow(10, _topmarginy, string(map[? "textures-num"]) + " BASE TEXTURES NEEDED", iuCream, 0, 1, c_black);
+                draw_set_font(fntMain8);
+                for (var i=0; i<map[? "textures-num"]; i++)
+                {
+                    iui_label_shadow(10, _topmarginy + 30 + 10 * i, _textures[# 0, i], iuCream, 0, 1, c_black);
+                }
+                draw_set_font(fntMain16);
+                
+                iui_label_shadow(_scrw * 0.5 + 10, _topmarginy, string(ds_list_size(_maptextures)) + " MAP TEXTURES FOUND", iuCream, 0, 1, c_black);
+                draw_set_font(fntMain8);
+                for (var i=0; i<ds_list_size(_maptextures); i++)
+                {
+                    iui_label_shadow(_scrw * 0.5 + 10, _topmarginy + 30 + 10 * i, _maptextures[| i], iuCream, 0, 1, c_black);
+                }
+                draw_set_font(fntMain16);
+                break;
+        }
+        break;
+}
+
+iui_end();
