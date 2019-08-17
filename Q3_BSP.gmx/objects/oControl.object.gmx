@@ -26,9 +26,36 @@
           <argument>
             <kind>1</kind>
             <string>iui_init();
+z3d_init();
+
+mouseSensitivity = 0.3;
+mouseLock = false;
 
 map = zbsp_load_map("heatctf.zip");
-
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+    <event eventtype="1" enumb="0">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>d3d_end();
+zbsp_free_map(map);
 </string>
           </argument>
         </arguments>
@@ -51,8 +78,186 @@ map = zbsp_load_map("heatctf.zip");
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>iui_update_io();
+            <string>var _scrw = window_get_width(), _scrh = window_get_height();
 
+if (keyboard_check_pressed(ord('L')))
+{
+    mouseLock = !mouseLock;
+    window_mouse_set(_scrw * 0.5, _scrh * 0.5);
+}
+
+if (mouseLock)
+{
+    var _dx = window_mouse_get_x() - (_scrw * 0.5);
+    var _dy = window_mouse_get_y() - (_scrh * 0.5);
+    camRotH += _dx * mouseSensitivity;
+    camRotV += _dy * mouseSensitivity;
+    camTilt += _dx * mouseSensitivity * 0.2;
+    window_mouse_set(_scrw * 0.5, _scrh * 0.5);
+    
+    z3d_update_vectors();
+    
+    // move camera
+    var _inputfwd = keyboard_check(ord('W')) - keyboard_check(ord('S'));
+    var _inputside = keyboard_check(ord('D')) - keyboard_check(ord('A'));
+    if (_inputfwd != 0 || _inputside != 0)
+    {
+        var _wishdirx = camFwdX * _inputfwd - dsin(camRotH) * _inputside;
+        var _wishdiry = camFwdY * _inputfwd + dcos(camRotH) * _inputside;
+        var _wishdirz = camFwdZ * _inputfwd;
+        
+        z3d_accelerate(0.25, 6, _wishdirx, _wishdiry, _wishdirz);
+    }
+    camTilt = lerp(camTilt, 0, 0.08);
+}
+else
+{
+    z3d_update_vectors();
+}
+
+camX += camVX;
+camY += camVY;
+camZ += camVZ;
+camVX *= 0.95;
+camVY *= 0.95;
+camVZ *= 0.95;
+iui_update_io();
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+    <event eventtype="8" enumb="64">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>/// Draw UI
+var _scrw = window_get_width(), _scrh = window_get_height();
+var _tophei = 160;
+var _topmarginy = 50;
+
+draw_set_font(fntMain16);
+iui_begin();
+
+iui_rect(0, 0, _scrw, _tophei, iuHellaDark);
+ui_tabidx = iui_tab(0, 0, 80, 30, pack("MAP", "LOG", "DIRENTRY", "LUMPS"), ui_tabidx, 2);
+
+switch (ui_tabidx)
+{
+    case 0:
+        iui_label_shadow(10, _topmarginy, "FILENAME : " + map[? "filename"], iuCream, 0, 1, c_black);
+        iui_label_shadow(10, _topmarginy + 20, "FILETYPE : " + map[? "filetype"], iuCream, 0, 1, c_black);
+        iui_label_shadow(10, _topmarginy + 40, "MAP NAME : " + map[? "map-name"], iuCream, 0, 1, c_black);
+        iui_label_shadow(10, _topmarginy + 60, "SUCCESS : " + string(map[? "success"]) + " | " + map[? "error"], iuCream, 0, 1, c_black);
+        break;
+        
+    case 1:
+        iui_rect(0, _tophei, _scrw, _scrh - _tophei, iuHellaDark);
+        iui_label_shadow(10, _topmarginy, map[? "debug_log"], iuCream, 0, 1, c_black);
+        break;
+        
+    case 2:
+        iui_rect(0, _tophei, _scrw, _scrh - _tophei, iuHellaDark);
+        
+        var _off = 0;
+        for (var i=0; i&lt;array_length_1d(global.BSPLumpNames); i++)
+        {
+            iui_label_shadow(10, _topmarginy + _off, "OFFSET : " + string(map[? global.BSPLumpNames[@i] + "-diroff"]), iuCream, 0, 1, c_black);
+            iui_label_shadow(10, _topmarginy + _off + 20, "LENGTH : " + string(map[? global.BSPLumpNames[@i] + "-dirlen"]), iuCream, 0, 1, c_black);
+            _off += 40;
+        }
+        break;
+        
+    case 3:
+        iui_rect(0, _tophei, _scrw, _scrh - _tophei, iuHellaDark);
+        
+        _topmarginy += 30;
+        
+        draw_set_font(fntMain8);
+        ui_lumptabidx = iui_tab(0, 30, 64, 30, global.BSPLumpNames, ui_lumptabidx, 1);
+        draw_set_font(fntMain16);
+        
+        switch (ui_lumptabidx)
+        {
+            case eBSPLUMP.ENTITIES:
+                var _drawtext = trim_text_lines(map[? "entities"], ui_entitiesscroll, ui_entitiesscroll + 20);
+                if (mouse_wheel_up()) ui_entitiesscroll = max(0, ui_entitiesscroll - 1);
+                if (mouse_wheel_down()) ui_entitiesscroll++;
+                
+                iui_label_shadow(10, _topmarginy, _drawtext, iuCream, 0, 1, c_black);
+                break;
+                
+            case eBSPLUMP.TEXTURES:
+                var _textures = map[? "textures-data"];
+                var _maptextures = map[? "res-tex-dir"];
+                
+                iui_label_shadow(10, _topmarginy, string(map[? "textures-num"]) + " BASE TEXTURES NEEDED", iuCream, 0, 1, c_black);
+                draw_set_font(fntMain8);
+                for (var i=0; i&lt;map[? "textures-num"]; i++)
+                {
+                    iui_label_shadow(10, _topmarginy + 30 + 10 * i, _textures[# 0, i], iuCream, 0, 1, c_black);
+                }
+                draw_set_font(fntMain16);
+                
+                iui_label_shadow(_scrw * 0.5 + 10, _topmarginy, string(ds_list_size(_maptextures)) + " MAP TEXTURES FOUND", iuCream, 0, 1, c_black);
+                draw_set_font(fntMain8);
+                for (var i=0; i&lt;ds_list_size(_maptextures); i++)
+                {
+                    iui_label_shadow(_scrw * 0.5 + 10, _topmarginy + 30 + 10 * i, _maptextures[| i], iuCream, 0, 1, c_black);
+                }
+                draw_set_font(fntMain16);
+                break;
+                
+            case eBSPLUMP.PLANES:
+                var _planes = map[? "planes-data"];
+                
+                iui_label_shadow(10, _topmarginy, string(map[? "planes-num"]) + " PLANES", iuCream, 0, 1, c_black);
+                
+                draw_set_font(fntMain8);
+                for (var i=0; i&lt;map[? "planes-num"]; i++)
+                {
+                    iui_label_shadow(10, _topmarginy + 30 + 10 * i, string(_planes[# 0, i]) + ", " + string(_planes[# 1, i]) + ", " + string(_planes[# 2, i]) + " | " + string(_planes[# 3, i]), iuCream, 0, 1, c_black);
+                }
+                draw_set_font(fntMain16);
+                break;
+        }
+        break;
+}
+
+draw_set_font(fntMain16);
+iui_align_push(2, 2);
+if (mouseLock)
+{
+    var _wid = string_width("MOUSE LOCKED"), _hei = string_height("MOUSE LOCKED");
+    iui_rect_pos(_scrw - _wid, _scrh - _hei, _scrw, _scrh, $FF00FF, 1);
+    iui_label_shadow(_scrw, _scrh, "MOUSE LOCKED", c_white, 0, 1, c_black);
+}
+else
+{
+    var _wid = string_width("MOUSE UNLOCKED"), _hei = string_height("MOUSE UNLOCKED");
+    iui_rect_pos(_scrw - _wid, _scrh - _hei, _scrw, _scrh, $FF00FF, 1);
+    iui_label_shadow(_scrw, _scrh, "MOUSE UNLOCKED", c_white, 0, 1, c_black);
+}
+iui_align_pop();
+
+iui_end();
+
+var _amp = 64;
+draw_line_color(_scrw * 0.5, _scrh * 0.5, _scrw * 0.5 + camFwdY * _amp, _scrh * 0.5 + camFwdZ * _amp, c_red, c_red);
+draw_line_color(_scrw * 0.5, _scrh * 0.5, _scrw * 0.5 + camUpY * _amp, _scrh * 0.5 + camUpZ * _amp, c_blue, c_blue);
 </string>
           </argument>
         </arguments>
@@ -75,80 +280,10 @@ map = zbsp_load_map("heatctf.zip");
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>var _scrw = window_get_width(), _scrh = window_get_height();
-var _tophei = _scrh;//120;
-var _topmarginy = 50;
+            <string>/// Draw wireframe leaf bbox
+d3d_set_projection_ext(camX, camY, camZ, camX + camFwdX, camY + camFwdY, camZ + camFwdZ, camUpX, camUpY, camUpZ, 90, window_get_width() / window_get_height(), 1, 16000);
 
-draw_set_font(fntMain16);
-iui_begin();
-
-iui_rect(0, 0, _scrw, _tophei, iuHellaDark);
-ui_tabidx = iui_tab(0, 0, 80, 30, pack("MAP", "LOG", "DIRENTRY", "LUMPS"), ui_tabidx, 2);
-
-switch (ui_tabidx)
-{
-    case 0:
-        iui_label_shadow(10, _topmarginy, "FILENAME : " + map[? "name"], iuCream, 0, 1, c_black);
-        iui_label_shadow(10, _topmarginy + 20, "FILETYPE : " + map[? "type"], iuCream, 0, 1, c_black);
-        iui_label_shadow(10, _topmarginy + 40, "SUCCESS : " + string(map[? "success"]) + " | " + map[? "error"], iuCream, 0, 1, c_black);
-        break;
-        
-    case 1:
-        iui_label_shadow(10, _topmarginy, map[? "debug_log"], iuCream, 0, 1, c_black);
-        break;
-        
-    case 2:
-        var _off = 0;
-        for (var i=0; i&lt;array_length_1d(global.BSPLumpNames); i++)
-        {
-            iui_label_shadow(10, _topmarginy + _off, "OFFSET : " + string(map[? global.BSPLumpNames[@i] + "-diroff"]), iuCream, 0, 1, c_black);
-            iui_label_shadow(10, _topmarginy + _off + 20, "LENGTH : " + string(map[? global.BSPLumpNames[@i] + "-dirlen"]), iuCream, 0, 1, c_black);
-            _off += 40;
-        }
-        break;
-        
-    case 3:
-        _topmarginy += 30;
-        
-        draw_set_font(fntMain8);
-        ui_lumptabidx = iui_tab(0, 30, 64, 30, global.BSPLumpNames, ui_lumptabidx, 1);
-        draw_set_font(fntMain16);
-        
-        switch (ui_lumptabidx)
-        {
-            case eBSPLUMP.ENTITIES:
-                var _drawtext = trim_text_lines(map[? "entities"], ui_entitiesscroll, ui_entitiesscroll + 20);
-                if (mouse_wheel_up()) ui_entitiesscroll = max(0, ui_entitiesscroll - 1);
-                if (mouse_wheel_down()) ui_entitiesscroll++;
-                
-                iui_label_shadow(10, _topmarginy, _drawtext, iuCream, 0, 1, c_black);
-                break;
-                
-            case eBSPLUMP.TEXTURES:
-                var _textures = map[? "textures-data"];
-                var _maptextures = map[? "data-textures-dir"];
-                
-                iui_label_shadow(10, _topmarginy, string(map[? "textures-num"]) + " BASE TEXTURES NEEDED", iuCream, 0, 1, c_black);
-                draw_set_font(fntMain8);
-                for (var i=0; i&lt;map[? "textures-num"]; i++)
-                {
-                    iui_label_shadow(10, _topmarginy + 30 + 10 * i, _textures[# 0, i], iuCream, 0, 1, c_black);
-                }
-                draw_set_font(fntMain16);
-                
-                iui_label_shadow(_scrw * 0.5 + 10, _topmarginy, string(ds_list_size(_maptextures)) + " MAP TEXTURES FOUND", iuCream, 0, 1, c_black);
-                draw_set_font(fntMain8);
-                for (var i=0; i&lt;ds_list_size(_maptextures); i++)
-                {
-                    iui_label_shadow(_scrw * 0.5 + 10, _topmarginy + 30 + 10 * i, _maptextures[| i], iuCream, 0, 1, c_black);
-                }
-                draw_set_font(fntMain16);
-                break;
-        }
-        break;
-}
-
-iui_end();
+vertex_submit(zbspLeafbboxVB, pr_linelist, -1);
 </string>
           </argument>
         </arguments>

@@ -1,0 +1,16 @@
+// 2019-08-18 02:35:46
+///z3d_accelerate(accel, maxvel, wishdirx, wishdiry, wishdirz)
+/*
+    Accelerates in given direction
+*/
+var _accel = argument0, _maxvel = argument1;
+var _wishdirx = argument2, _wishdiry = argument3, _wishdirz = argument4;
+
+var _fwdvel = dot_product_3d(_wishdirx, _wishdiry, _wishdirz, camVX, camVY, camVZ);
+var _addvel = min(_accel, _maxvel - _fwdvel);
+
+show_debug_message(_fwdvel);
+
+camVX += _wishdirx * _addvel;
+camVY += _wishdiry * _addvel;
+camVZ += _wishdirz * _addvel;

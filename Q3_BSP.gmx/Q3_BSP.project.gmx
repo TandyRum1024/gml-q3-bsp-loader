@@ -66,17 +66,26 @@
   <backgrounds name="background"/>
   <paths name="paths"/>
   <scripts name="scripts">
+    <scripts name="3DHELPER">
+      <script>scripts\z3d_init.gml</script>
+      <script>scripts\z3d_accelerate.gml</script>
+      <script>scripts\z3d_update_vectors.gml</script>
+    </scripts>
     <scripts name="ZBSP">
       <scripts name="HELPER">
         <script>scripts\zbsp_append_log.gml</script>
         <script>scripts\zbsp_read_str.gml</script>
       </scripts>
       <scripts name="LUMPS">
-        <script>scripts\zbsp_load_entities.gml</script>
-        <script>scripts\zbsp_load_textures.gml</script>
+        <script>scripts\zbsp_load_lump_entities.gml</script>
+        <script>scripts\zbsp_load_lump_textures.gml</script>
+        <script>scripts\zbsp_load_lump_planes.gml</script>
+        <script>scripts\zbsp_load_lump_nodes.gml</script>
+        <script>scripts\zbsp_load_lump_leafs.gml</script>
       </scripts>
       <script>scripts\zbsp_load_map.gml</script>
       <script>scripts\zbsp_load_lump_directory.gml</script>
+      <script>scripts\zbsp_free_map.gml</script>
     </scripts>
     <scripts name="IMNOTGUI">
       <scripts name="DRAW">
