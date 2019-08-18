@@ -40,10 +40,10 @@ global.BSPLumpNames[_idx] = "leafbrushes"; global.BSPLumpSizes[_idx++] = 4;
 global.BSPLumpNames[_idx] = "models"; global.BSPLumpSizes[_idx++] = 40;
 global.BSPLumpNames[_idx] = "brushes"; global.BSPLumpSizes[_idx++] = 12;
 global.BSPLumpNames[_idx] = "brushsides"; global.BSPLumpSizes[_idx++] = 8;
-global.BSPLumpNames[_idx] = "vertices"; global.BSPLumpSizes[_idx++] = 14;
+global.BSPLumpNames[_idx] = "vertices"; global.BSPLumpSizes[_idx++] = 44;
 global.BSPLumpNames[_idx] = "meshverts"; global.BSPLumpSizes[_idx++] = 4;
 global.BSPLumpNames[_idx] = "effects"; global.BSPLumpSizes[_idx++] = 72;
-global.BSPLumpNames[_idx] = "faces"; global.BSPLumpSizes[_idx++] = 26;
+global.BSPLumpNames[_idx] = "faces"; global.BSPLumpSizes[_idx++] = 104;
 global.BSPLumpNames[_idx] = "lightmaps"; global.BSPLumpSizes[_idx++] = 49152;
 global.BSPLumpNames[_idx] = "lightvols"; global.BSPLumpSizes[_idx++] = 8;
 global.BSPLumpNames[_idx] = "visdata"; global.BSPLumpSizes[_idx++] = 1;
@@ -79,6 +79,9 @@ var _datafolder = "bspdata";
 var _mapfolder = _datafolder + "\map\" + _filename;
 var _assetfolder = _datafolder + "\res";
 var _bspfile = "";
+
+// add map resource direction to the map so we can access those later
+bspdata[? "res-dir"] = _mapfolder;
 
 if (!directory_exists(_assetfolder))
 {
@@ -254,53 +257,360 @@ file_text_write_string(_file, bspdata[? "entities"]);
 file_text_close(_file);
 
 // Load textures data
+show_debug_message("Loading textures..");
 zbsp_load_lump_textures(_filebuffer, bspdata);
 
 // Load plane data
+show_debug_message("Loading planes..");
 zbsp_load_lump_planes(_filebuffer, bspdata);
 
 // Load node data
+show_debug_message("Loading nodes..");
 zbsp_load_lump_nodes(_filebuffer, bspdata);
 
 // Load leaf data
+show_debug_message("Loading leafs..");
 zbsp_load_lump_leafs(_filebuffer, bspdata);
 
+// Load leaffaces data
+show_debug_message("Loading leaffaces..");
+zbsp_load_lump_leaffaces(_filebuffer, bspdata);
+
+// Load leafbrushes data
+show_debug_message("Loading leafbrushes..");
+zbsp_load_lump_leafbrushes(_filebuffer, bspdata);
+
+// Load models data
+show_debug_message("Loading models..");
+zbsp_load_lump_models(_filebuffer, bspdata);
+
+// Load brushes data
+show_debug_message("Loading brushes..");
+zbsp_load_lump_brushes(_filebuffer, bspdata);
+
+// Load brushsides data
+show_debug_message("Loading brushsides..");
+zbsp_load_lump_brushsides(_filebuffer, bspdata);
+
+// Load vertices data
+show_debug_message("Loading vertices..");
+zbsp_load_lump_vertices(_filebuffer, bspdata);
+
+// Load meshverts data
+show_debug_message("Loading meshverts..");
+zbsp_load_lump_meshverts(_filebuffer, bspdata);
+
+// Load effects data
+show_debug_message("Loading effects..");
+zbsp_load_lump_effects(_filebuffer, bspdata);
+
+// Load faces data
+show_debug_message("Loading faces..");
+zbsp_load_lump_faces(_filebuffer, bspdata);
+
+// Load lightmaps data
+show_debug_message("Loading lightmaps..");
+zbsp_load_lump_lightmaps(_filebuffer, bspdata);
+
+// Load lightvols data
+show_debug_message("Loading lightvols..");
+zbsp_load_lump_lightvols(_filebuffer, bspdata);
+
 // (DEBUG) Build wireframe vertex buffer of leaf bounding box
+show_debug_message("Building Wireframe VB..");
 vertex_format_begin();
 vertex_format_add_position_3d();
 vertex_format_add_color();
 zbspDebugVF = vertex_format_end();
-zbspLeafbboxVB = vertex_create_buffer();
+zbspDebugBboxVB = vertex_create_buffer();
 
-vertex_begin(zbspLeafbboxVB, zbspDebugVF);
+vertex_begin(zbspDebugBboxVB, zbspDebugVF);
+var _models = bspdata[? "models-data"];
 var _leafs = bspdata[? "leafs-data"];
+var _nodes = bspdata[? "nodes-data"];
+for (var i=0; i<bspdata[? "models-num"]; i++)
+{
+    var _minx = _models[# 0, i], _miny = _models[# 1, i], _minz = _models[# 2, i];
+    var _maxx = _models[# 3, i], _maxy = _models[# 4, i], _maxz = _models[# 5, i];
+    
+    // side 1
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    // side 2
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    // side 3
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    // side 4
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+}
+
+for (var i=0; i<bspdata[? "nodes-num"]; i++)
+{
+    var _minx = _nodes[# 3, i], _miny = _nodes[# 4, i], _minz = _nodes[# 5, i];
+    var _maxx = _nodes[# 6, i], _maxy = _nodes[# 7, i], _maxz = _nodes[# 8, i];
+    
+    // side 1
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    // side 2
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    // side 3
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    // side 4
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+}
+
 for (var i=0; i<bspdata[? "leafs-num"]; i++)
 {
     var _minx = _leafs[# 2, i], _miny = _leafs[# 3, i], _minz = _leafs[# 4, i];
     var _maxx = _leafs[# 5, i], _maxy = _leafs[# 6, i], _maxz = _leafs[# 7, i];
     
     // side 1
-    vertex_position_3d(zbspLeafbboxVB, _minx, _miny, _minz); vertex_colour(zbspLeafbboxVB, c_lime, 1);
-    vertex_position_3d(zbspLeafbboxVB, _maxx, _miny, _minz); vertex_colour(zbspLeafbboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
     
-    vertex_position_3d(zbspLeafbboxVB, _minx, _miny, _minz); vertex_colour(zbspLeafbboxVB, c_lime, 1);
-    vertex_position_3d(zbspLeafbboxVB, _minx, _maxy, _minz); vertex_colour(zbspLeafbboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
     
-    vertex_position_3d(zbspLeafbboxVB, _minx, _miny, _minz); vertex_colour(zbspLeafbboxVB, c_lime, 1);
-    vertex_position_3d(zbspLeafbboxVB, _minx, _miny, _maxz); vertex_colour(zbspLeafbboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
     
     // side 2
-    vertex_position_3d(zbspLeafbboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspLeafbboxVB, c_lime, 1);
-    vertex_position_3d(zbspLeafbboxVB, _minx, _maxy, _maxz); vertex_colour(zbspLeafbboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
     
-    vertex_position_3d(zbspLeafbboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspLeafbboxVB, c_lime, 1);
-    vertex_position_3d(zbspLeafbboxVB, _maxx, _miny, _maxz); vertex_colour(zbspLeafbboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
     
-    vertex_position_3d(zbspLeafbboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspLeafbboxVB, c_lime, 1);
-    vertex_position_3d(zbspLeafbboxVB, _maxx, _maxy, _minz); vertex_colour(zbspLeafbboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    // side 3
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    // side 4
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
 }
-vertex_end(zbspLeafbboxVB);
-vertex_freeze(zbspLeafbboxVB);
+vertex_end(zbspDebugBboxVB);
+vertex_freeze(zbspDebugBboxVB);
+
+// (DEBUG) Build vertex buffer of faces
+show_debug_message("Building Faces VB..");
+vertex_format_begin();
+vertex_format_add_position_3d();
+vertex_format_add_colour();
+vertex_format_add_normal();
+zbspDebugVF2 = vertex_format_end();
+zbspDebugMeshVB = vertex_create_buffer();
+
+vertex_begin(zbspDebugMeshVB, zbspDebugVF2);
+var _faces = bspdata[? "faces-data"];
+var _vertices = bspdata[? "vertices-data"];
+var _meshverts = bspdata[? "meshverts-data"];
+for (var i=0; i<bspdata[? "faces-num"]; i++)
+{
+    var _type = _faces[# 2, i];
+    
+    switch (_type)
+    {
+        case 3: // Mesh
+        case 1: // Polygon (Thankfully they already triangulated the polygons)
+            // fetch meshverts idx and number
+            var _meshvertidx = _faces[# 5, i], _meshvertnum = _faces[# 6, i];
+            
+            // fetch first vertex idx
+            var _vertidx = _faces[# 3, i];
+            
+            for (var j=0; j<_meshvertnum; j++)
+            {
+                // calculate current vertex index from meshvert offset & first vertex index
+                if (_meshvertidx + j > bspdata[? "meshverts-num"])
+                {
+                    show_debug_message("MESHVERTS INDEX OUT OF BOUNDS : " + string(_meshvertidx + j) + " / " + string(bspdata[? "meshverts-num"]));
+                    show_debug_message("MESHVERT IDX  : " + string(_meshvertidx) + " / NUM " + string(_meshvertnum));
+                    show_debug_message("TEXIDX : " + string(_faces[# 0, i]));
+                    zbsp_free_map(bspdata);
+                    game_end();
+                    break;
+                }
+                var _cvertex = _vertidx + _meshverts[| _meshvertidx + j];
+                
+                // append vertex data to buffer
+                vertex_position_3d(zbspDebugMeshVB, _vertices[# 0, _cvertex], _vertices[# 1, _cvertex], _vertices[# 2, _cvertex]);
+                vertex_colour(zbspDebugMeshVB, _vertices[# 10, _cvertex], _vertices[# 11, _cvertex]);
+                vertex_normal(zbspDebugMeshVB, _vertices[# 7, _cvertex], _vertices[# 8, _cvertex], _vertices[# 9, _cvertex]);
+            }
+            break;
+            
+        case 2: // Bezier patch (Draw control points for now)
+            
+            break;
+    }
+}
+
+vertex_end(zbspDebugMeshVB);
+vertex_freeze(zbspDebugMeshVB);
+
+// (DEBUG) Build lightvol visualizations
+// http://www.mralligator.com/q3/#Lightvols
+show_debug_message("Building Lightvol VB..");
+zbspDebugLightvolVB = vertex_create_buffer();
+
+var _lightvols = bspdata[? "lightvols-data"];
+var _lightvolcellsizeh = 64;
+var _lightvolcellsizev = 128;
+var _lightvolnx = floor(_models[# 3, 0] / 64) - ceil(_models[# 0, 0] / 64) + 1;
+var _lightvolny = floor(_models[# 4, 0] / 64) - ceil(_models[# 1, 0] / 64) + 1;
+var _lightvolnz = floor(_models[# 5, 0] / 128) - ceil(_models[# 2, 0] / 128) + 1;
+
+show_debug_message("Lightvol size calculated : " + string(_lightvolnx * _lightvolny * _lightvolnz));
+show_debug_message("Lightvol actual size : " + string(bspdata[? "lightvols-num"]));
+
+vertex_begin(zbspDebugLightvolVB, zbspDebugVF);
+var _boxsz = 8;
+for (var _x=0; _x<_lightvolnx; _x++)
+{
+    for (var _y=0; _y<_lightvolny; _y++)
+    {
+        for (var _z=0; _z<_lightvolnz; _z++)
+        {
+            var _lvolidx = _z * (_lightvolnx * _lightvolny) + _y * (_lightvolnx) + _x;
+            var _wpx = _x * _lightvolcellsizeh - _boxsz, _wpy = _y * _lightvolcellsizeh - _boxsz, _wpz = _z * _lightvolcellsizev - _boxsz;
+            var _wpx2 = _x * _lightvolcellsizeh + _boxsz, _wpy2 = _y * _lightvolcellsizeh + _boxsz, _wpz2 = _z * _lightvolcellsizev + _boxsz;
+            
+            // x-
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy2, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy2, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy2, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            
+            // z-
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy2, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy2, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy2, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            
+            // y-
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy2, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy2, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy2, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            
+            // x+
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy2, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy2, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy2, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            
+            // z+
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy2, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy2, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy2, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            
+            // y+
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy2, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx2, _wpy2, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+            vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy2, _wpz2); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
+        }
+    }
+}
+
+vertex_end(zbspDebugLightvolVB);
+vertex_freeze(zbspDebugLightvolVB);
 
 // Free buffer from leaking the memory
 buffer_delete(_filebuffer);

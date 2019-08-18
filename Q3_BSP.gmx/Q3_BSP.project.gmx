@@ -3,7 +3,7 @@
   <Configs name="configs">
     <Config>Configs\Default</Config>
   </Configs>
-  <datafiles number="3" name="datafiles">
+  <datafiles number="4" name="datafiles">
     <datafile>
       <name>cannedheat.bsp</name>
       <exists>-1</exists>
@@ -20,6 +20,23 @@
         </Config>
       </ConfigOptions>
       <filename>cannedheat.bsp</filename>
+    </datafile>
+    <datafile>
+      <name>gm3tourney2.zip</name>
+      <exists>-1</exists>
+      <size>7738816</size>
+      <exportAction>2</exportAction>
+      <exportDir></exportDir>
+      <overwrite>0</overwrite>
+      <freeData>-1</freeData>
+      <removeEnd>0</removeEnd>
+      <store>0</store>
+      <ConfigOptions>
+        <Config name="Default">
+          <CopyToMask>9223372036854775807</CopyToMask>
+        </Config>
+      </ConfigOptions>
+      <filename>gm3tourney2.zip</filename>
     </datafile>
     <datafile>
       <name>heatctf.zip</name>
@@ -82,6 +99,17 @@
         <script>scripts\zbsp_load_lump_planes.gml</script>
         <script>scripts\zbsp_load_lump_nodes.gml</script>
         <script>scripts\zbsp_load_lump_leafs.gml</script>
+        <script>scripts\zbsp_load_lump_leaffaces.gml</script>
+        <script>scripts\zbsp_load_lump_leafbrushes.gml</script>
+        <script>scripts\zbsp_load_lump_models.gml</script>
+        <script>scripts\zbsp_load_lump_brushes.gml</script>
+        <script>scripts\zbsp_load_lump_brushsides.gml</script>
+        <script>scripts\zbsp_load_lump_vertices.gml</script>
+        <script>scripts\zbsp_load_lump_meshverts.gml</script>
+        <script>scripts\zbsp_load_lump_effects.gml</script>
+        <script>scripts\zbsp_load_lump_faces.gml</script>
+        <script>scripts\zbsp_load_lump_lightmaps.gml</script>
+        <script>scripts\zbsp_load_lump_lightvols.gml</script>
       </scripts>
       <script>scripts\zbsp_load_map.gml</script>
       <script>scripts\zbsp_load_lump_directory.gml</script>

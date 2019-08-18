@@ -1,4 +1,4 @@
-// 2019-08-17 23:25:19
+// 2019-08-19 02:13:28
 /// zbsp_free_map(bspdata)
 ///zbsp_free_map(map)
 /*
@@ -12,6 +12,18 @@ if (surface_exists(bspdata[? "res-texatlas"])) surface_free(bspdata[? "res-texat
 
 for (var i=0; i<array_length_1d(global.BSPLumpNames); i++)
 {
-    // Free lump related data structures
-    if (ds_map_exists(bspdata, global.BSPLumpNames[@ i] + "-data") ds_exists(bspdata[? global.BSPLumpNames[@ i] + "-data"], ds_type_grid)) ds_grid_destroy(bspdata[? global.BSPLumpNames[@ i] + "-data"]);
+    switch (i)
+    {
+        case eBSPLUMP.LEAFBRUSHES:
+        case eBSPLUMP.LEAFFACES:
+        case eBSPLUMP.MESHVERTS:
+            // Free lump related data structures
+            if (ds_map_exists(bspdata, global.BSPLumpNames[@ i] + "-data") && ds_exists(bspdata[? global.BSPLumpNames[@ i] + "-data"], ds_type_list)) ds_list_destroy(bspdata[? global.BSPLumpNames[@ i] + "-data"]);
+            break;
+        
+        default:
+            // Free lump related data structures
+            if (ds_map_exists(bspdata, global.BSPLumpNames[@ i] + "-data") && ds_exists(bspdata[? global.BSPLumpNames[@ i] + "-data"], ds_type_grid)) ds_grid_destroy(bspdata[? global.BSPLumpNames[@ i] + "-data"]);
+            break;
+    }
 }

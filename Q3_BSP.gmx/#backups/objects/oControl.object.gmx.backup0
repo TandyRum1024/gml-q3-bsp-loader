@@ -1,10 +1,13 @@
-// 2019-08-18 03:04:33
+// 2019-08-19 06:46:31
 #event create
 iui_init();
 z3d_init();
 
 mouseSensitivity = 0.3;
 mouseLock = false;
+
+debugDrawBbox = false;
+debugDrawLvol = false;
 
 map = zbsp_load_map("heatctf.zip");
 
@@ -14,6 +17,12 @@ zbsp_free_map(map);
 
 #event step
 var _scrw = window_get_width(), _scrh = window_get_height();
+
+if (keyboard_check_pressed(ord('1')))
+    debugDrawBbox = !debugDrawBbox;
+    
+if (keyboard_check_pressed(ord('2')))
+    debugDrawLvol = !debugDrawLvol;
 
 if (keyboard_check_pressed(ord('L')))
 {
@@ -61,7 +70,13 @@ iui_update_io();
 #event draw Draw wireframe leaf bbox
 d3d_set_projection_ext(camX, camY, camZ, camX + camFwdX, camY + camFwdY, camZ + camFwdZ, camUpX, camUpY, camUpZ, 90, window_get_width() / window_get_height(), 1, 16000);
 
-vertex_submit(zbspLeafbboxVB, pr_linelist, -1);
+vertex_submit(zbspDebugMeshVB, pr_trianglelist, -1);
+
+if (debugDrawBbox)
+    vertex_submit(zbspDebugBboxVB, pr_linelist, -1);
+
+if (debugDrawLvol)
+    vertex_submit(zbspDebugLightvolVB, pr_trianglelist, -1);
 
 #event draw_gui Draw UI
 var _scrw = window_get_width(), _scrh = window_get_height();

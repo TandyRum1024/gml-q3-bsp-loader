@@ -31,6 +31,9 @@ z3d_init();
 mouseSensitivity = 0.3;
 mouseLock = false;
 
+debugDrawBbox = false;
+debugDrawLvol = false;
+
 map = zbsp_load_map("heatctf.zip");
 </string>
           </argument>
@@ -79,6 +82,12 @@ zbsp_free_map(map);
           <argument>
             <kind>1</kind>
             <string>var _scrw = window_get_width(), _scrh = window_get_height();
+
+if (keyboard_check_pressed(ord('1')))
+    debugDrawBbox = !debugDrawBbox;
+    
+if (keyboard_check_pressed(ord('2')))
+    debugDrawLvol = !debugDrawLvol;
 
 if (keyboard_check_pressed(ord('L')))
 {
@@ -283,7 +292,13 @@ draw_line_color(_scrw * 0.5, _scrh * 0.5, _scrw * 0.5 + camUpY * _amp, _scrh * 0
             <string>/// Draw wireframe leaf bbox
 d3d_set_projection_ext(camX, camY, camZ, camX + camFwdX, camY + camFwdY, camZ + camFwdZ, camUpX, camUpY, camUpZ, 90, window_get_width() / window_get_height(), 1, 16000);
 
-vertex_submit(zbspLeafbboxVB, pr_linelist, -1);
+vertex_submit(zbspDebugMeshVB, pr_trianglelist, -1);
+
+if (debugDrawBbox)
+    vertex_submit(zbspDebugBboxVB, pr_linelist, -1);
+
+if (debugDrawLvol)
+    vertex_submit(zbspDebugLightvolVB, pr_trianglelist, -1);
 </string>
           </argument>
         </arguments>
