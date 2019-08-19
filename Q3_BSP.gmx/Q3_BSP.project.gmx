@@ -92,6 +92,9 @@
       <scripts name="HELPER">
         <script>scripts\zbsp_append_log.gml</script>
         <script>scripts\zbsp_read_str.gml</script>
+        <script>scripts\zbsp_vb_lightmapcube.gml</script>
+        <script>scripts\zbsp_vb_face.gml</script>
+        <script>scripts\zbsp_calc_normal.gml</script>
       </scripts>
       <scripts name="LUMPS">
         <script>scripts\zbsp_load_lump_entities.gml</script>

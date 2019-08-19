@@ -1,3 +1,4 @@
+// 2019-08-19 02:57:30
 ///zbsp_load_lump_meshverts(buffer, map)
 /*
     Loads meshverts lump data from given buffer into the given map
@@ -15,7 +16,7 @@ _data = ds_list_create();
 for (var i=0; i<_num; i++)
 {
     // mesh offset
-    ds_list_add(_data, buffer_read(argument0, buffer_s32));
+    ds_list_add(_data, buffer_read(argument0, buffer_u32));
 }
 
 argument1[? "meshverts-num"] = _num;

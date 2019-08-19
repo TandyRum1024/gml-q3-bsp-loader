@@ -20,10 +20,10 @@ for (var i=0; i<_num; i++)
     _data[# 0, i] = zbsp_read_str(argument0, 64);
     
     // brush index
-    _data[# 1, i] = buffer_read(argument0, buffer_u32);
+    _data[# 1, i] = buffer_read(argument0, buffer_s32);
     
     // reserved
-    buffer_read(argument0, buffer_u32);
+    buffer_read(argument0, buffer_s32);
 }
 
 argument1[? "effects-num"] = _num;

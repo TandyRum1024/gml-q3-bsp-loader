@@ -39,16 +39,16 @@ for (var i=0; i<_num; i++)
     _data[# 5, i] = _z;
     
     // first face index
-    _data[# 6, i] = buffer_read(argument0, buffer_u32);
+    _data[# 6, i] = buffer_read(argument0, buffer_s32);
     
     // number of faces
-    _data[# 7, i] = buffer_read(argument0, buffer_u32);
+    _data[# 7, i] = buffer_read(argument0, buffer_s32);
     
     // first brush index
-    _data[# 8, i] = buffer_read(argument0, buffer_u32);
+    _data[# 8, i] = buffer_read(argument0, buffer_s32);
     
     // number of brushes
-    _data[# 9, i] = buffer_read(argument0, buffer_u32);
+    _data[# 9, i] = buffer_read(argument0, buffer_s32);
 }
 
 argument1[? "models-num"] = _num;

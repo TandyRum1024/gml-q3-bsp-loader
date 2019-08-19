@@ -1,4 +1,4 @@
-// 2019-08-19 07:22:10
+// 2019-08-19 19:53:31
 ///zbsp_load_lump_leafs(buffer, map)
 /*
     Loads leafs lump data from given buffer into the given map
@@ -30,34 +30,34 @@ for (var i=0; i<_num; i++)
     _data[# 1, i] = buffer_read(argument0, buffer_u32);
     
     // bbox min coords
-    var _x = buffer_read(argument0, buffer_u32);
-    var _y = buffer_read(argument0, buffer_u32);
-    var _z = buffer_read(argument0, buffer_u32);
+    var _x = buffer_read(argument0, buffer_s32);
+    var _y = buffer_read(argument0, buffer_s32);
+    var _z = buffer_read(argument0, buffer_s32);
     
-    _data[# 2, i] = -_y;
-    _data[# 3, i] = _z;
-    _data[# 4, i] = _x;
+    _data[# 2, i] = _x;
+    _data[# 3, i] = -_y;
+    _data[# 4, i] = _z;
     
     // bbox max coords
-    _x = buffer_read(argument0, buffer_u32);
-    _y = buffer_read(argument0, buffer_u32);
-    _z = buffer_read(argument0, buffer_u32);
+    _x = buffer_read(argument0, buffer_s32);
+    _y = buffer_read(argument0, buffer_s32);
+    _z = buffer_read(argument0, buffer_s32);
     
-    _data[# 5, i] = -_y;
-    _data[# 6, i] = _z;
-    _data[# 7, i] = _x;
+    _data[# 5, i] = _x;
+    _data[# 6, i] = -_y;
+    _data[# 7, i] = _z;
     
     // first leafface idx
-    _data[# 8, i] = buffer_read(argument0, buffer_u32);
+    _data[# 8, i] = buffer_read(argument0, buffer_s32);
     
     // number of leaffaces this bad boy uses
-    _data[# 9, i] = buffer_read(argument0, buffer_u32);
+    _data[# 9, i] = buffer_read(argument0, buffer_s32);
     
     // first leafbrush idx
-    _data[# 10, i] = buffer_read(argument0, buffer_u32);
+    _data[# 10, i] = buffer_read(argument0, buffer_s32);
     
     // *slaps the roof of leaf* this bad boy uses this much of leafbrush
-    _data[# 11, i] = buffer_read(argument0, buffer_u32);
+    _data[# 11, i] = buffer_read(argument0, buffer_s32);
 }
 
 argument1[? "leafs-num"] = _num;

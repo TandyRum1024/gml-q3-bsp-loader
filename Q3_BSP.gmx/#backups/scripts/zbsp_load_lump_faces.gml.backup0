@@ -1,4 +1,4 @@
-// 2019-08-19 03:03:04
+// 2019-08-19 19:55:06
 ///zbsp_load_lump_faces(buffer, map)
 /*
     Loads faces lump data from given buffer into the given map
@@ -32,34 +32,34 @@ show_debug_message("FACE GRID : " + string(_data));
 for (var i=0; i<_num; i++)
 {
     // texture idx
-    _data[# 0, i] = buffer_read(argument0, buffer_u32);
+    _data[# 0, i] = buffer_read(argument0, buffer_s32);
     
     // effect idx
-    _data[# 1, i] = buffer_read(argument0, buffer_u32);
+    _data[# 1, i] = buffer_read(argument0, buffer_s32);
     
     // face type
-    _data[# 2, i] = buffer_read(argument0, buffer_u32);
+    _data[# 2, i] = buffer_read(argument0, buffer_s32);
     
     // first vertex idx
-    _data[# 3, i] = buffer_read(argument0, buffer_u32);
+    _data[# 3, i] = buffer_read(argument0, buffer_s32);
     // vertex num
-    _data[# 4, i] = buffer_read(argument0, buffer_u32);
+    _data[# 4, i] = buffer_read(argument0, buffer_s32);
     
     // first meshvert idx
-    _data[# 5, i] = buffer_read(argument0, buffer_u32);
+    _data[# 5, i] = buffer_read(argument0, buffer_s32);
     // meshvert num
-    _data[# 6, i] = buffer_read(argument0, buffer_u32);
+    _data[# 6, i] = buffer_read(argument0, buffer_s32);
     
     // lightmap index
-    _data[# 7, i] = buffer_read(argument0, buffer_u32);
+    _data[# 7, i] = buffer_read(argument0, buffer_s32);
     
     // lightmap corner pos
-    _data[# 8, i] = buffer_read(argument0, buffer_u32);
-    _data[# 9, i] = buffer_read(argument0, buffer_u32);
+    _data[# 8, i] = buffer_read(argument0, buffer_s32);
+    _data[# 9, i] = buffer_read(argument0, buffer_s32);
     
     // lightmap size
-    _data[# 10, i] = buffer_read(argument0, buffer_u32);
-    _data[# 11, i] = buffer_read(argument0, buffer_u32);
+    _data[# 10, i] = buffer_read(argument0, buffer_s32);
+    _data[# 11, i] = buffer_read(argument0, buffer_s32);
     
     // lightmap worldspace origin
     _data[# 12, i] = buffer_read(argument0, buffer_f32);
@@ -81,8 +81,8 @@ for (var i=0; i<_num; i++)
     _data[# 23, i] = buffer_read(argument0, buffer_f32);
     
     // bezier patch dimensions
-    _data[# 24, i] = buffer_read(argument0, buffer_u32);
-    _data[# 25, i] = buffer_read(argument0, buffer_u32);
+    _data[# 24, i] = buffer_read(argument0, buffer_s32);
+    _data[# 25, i] = buffer_read(argument0, buffer_s32);
 }
 
 argument1[? "faces-num"] = _num;

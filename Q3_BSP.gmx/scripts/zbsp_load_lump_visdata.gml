@@ -10,8 +10,8 @@
 var _off = argument1[? "visdata-diroff"], _len = argument1[? "visdata-dirlen"];
 buffer_seek(argument0, buffer_seek_start, _off);
 
-var _vecnum = buffer_read(argument0, buffer_u32);
-var _vecsize = buffer_read(argument0, buffer_u32);
+var _vecnum = buffer_read(argument0, buffer_s32);
+var _vecsize = buffer_read(argument0, buffer_s32);
 var _veclen = _vecsize * _vecnum;
 var _vec = ds_list_create();
 

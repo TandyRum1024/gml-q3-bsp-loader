@@ -1,0 +1,19 @@
+// 2019-08-19 21:03:26
+///zbsp_vb_face(vb, x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, colour)
+/*
+    Appends face vertices in given vertex buffer with format [position3d, colour]
+*/
+var _vb = argument0;
+var _x1 = argument1, _y1 = argument2, _z1 = argument3;
+var _x2 = argument4, _y2 = argument5, _z2 = argument6;
+var _x3 = argument7, _y3 = argument8, _z3 = argument9;
+var _x4 = argument10, _y4 = argument11, _z4 = argument12;
+var _col = argument13;
+
+// build mesh
+vertex_position_3d(_vb, _x0, _y0, _z0); vertex_colour(_vb, _col, 1);
+vertex_position_3d(_vb, _v2x, _v2y, _v2z); vertex_colour(_vb, _col, 1);
+vertex_position_3d(_vb, _v1x, _v1y, _v1z); vertex_colour(_vb, _col, 1);
+vertex_position_3d(_vb, _v1x, _v1y, _v1z); vertex_colour(_vb, _col, 1);
+vertex_position_3d(_vb, _v2x, _v2y, _v2z); vertex_colour(_vb, _col, 1);
+vertex_position_3d(_vb, _v3x, _v3y, _v3z); vertex_colour(_vb, _col, 1);

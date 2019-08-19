@@ -1,4 +1,4 @@
-// 2019-08-19 06:41:06
+// 2019-08-19 22:04:38
 #event create
 iui_init();
 z3d_init();
@@ -73,7 +73,7 @@ d3d_set_projection_ext(camX, camY, camZ, camX + camFwdX, camY + camFwdY, camZ + 
 vertex_submit(zbspDebugMeshVB, pr_trianglelist, -1);
 
 if (debugDrawBbox)
-    vertex_submit(zbspDebugLeafbboxVB, pr_linelist, -1);
+    vertex_submit(zbspDebugBboxVB, pr_linelist, -1);
 
 if (debugDrawLvol)
     vertex_submit(zbspDebugLightvolVB, pr_trianglelist, -1);

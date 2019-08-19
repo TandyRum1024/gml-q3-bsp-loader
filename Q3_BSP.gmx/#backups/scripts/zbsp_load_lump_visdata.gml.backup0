@@ -1,4 +1,4 @@
-// 2019-08-19 16:34:10
+// 2019-08-19 19:55:26
 ///zbsp_load_lump_visdata(buffer, map)
 /*
     Loads PVS data from given buffer into the given map
@@ -11,8 +11,8 @@
 var _off = argument1[? "visdata-diroff"], _len = argument1[? "visdata-dirlen"];
 buffer_seek(argument0, buffer_seek_start, _off);
 
-var _vecnum = buffer_read(argument0, buffer_u32);
-var _vecsize = buffer_read(argument0, buffer_u32);
+var _vecnum = buffer_read(argument0, buffer_s32);
+var _vecsize = buffer_read(argument0, buffer_s32);
 var _veclen = _vecsize * _vecnum;
 var _vec = ds_list_create();
 

@@ -15,7 +15,7 @@ _data = ds_list_create();
 for (var i=0; i<_num; i++)
 {
     // face idx
-    ds_list_add(_data, buffer_read(argument0, buffer_u32));
+    ds_list_add(_data, buffer_read(argument0, buffer_s32));
 }
 
 argument1[? "leaffaces-num"] = _num;

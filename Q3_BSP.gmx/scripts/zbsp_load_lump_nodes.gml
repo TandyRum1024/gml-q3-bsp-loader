@@ -19,29 +19,29 @@ _data = ds_grid_create(9, _num);
 for (var i=0; i<_num; i++)
 {
     // plane index
-    _data[# 0, i] = buffer_read(argument0, buffer_u32);
+    _data[# 0, i] = buffer_read(argument0, buffer_s32);
     
     // children index (negative index = leaf indices that can be indexed with following : -(leaf + 1))
-    _data[# 1, i] = buffer_read(argument0, buffer_u32);
-    _data[# 2, i] = buffer_read(argument0, buffer_u32);
+    _data[# 1, i] = buffer_read(argument0, buffer_s32);
+    _data[# 2, i] = buffer_read(argument0, buffer_s32);
     
     // bbox min coords
-    var _x = buffer_read(argument0, buffer_u32);
-    var _y = buffer_read(argument0, buffer_u32);
-    var _z = buffer_read(argument0, buffer_u32);
+    var _x = buffer_read(argument0, buffer_s32);
+    var _y = buffer_read(argument0, buffer_s32);
+    var _z = buffer_read(argument0, buffer_s32);
     
-    _data[# 3, i] = -_y;
-    _data[# 4, i] = _z;
-    _data[# 5, i] = _x;
+    _data[# 3, i] = _x;
+    _data[# 4, i] = -_y;
+    _data[# 5, i] = _z;
     
     // bbox max coords
-    _x = buffer_read(argument0, buffer_u32);
-    _y = buffer_read(argument0, buffer_u32);
-    _z = buffer_read(argument0, buffer_u32);
+    _x = buffer_read(argument0, buffer_s32);
+    _y = buffer_read(argument0, buffer_s32);
+    _z = buffer_read(argument0, buffer_s32);
     
-    _data[# 6, i] = -_y;
-    _data[# 7, i] = _z;
-    _data[# 8, i] = _x;
+    _data[# 6, i] = _x;
+    _data[# 7, i] = -_y;
+    _data[# 8, i] = _z;
 }
 
 argument1[? "nodes-num"] = _num;

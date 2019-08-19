@@ -1,4 +1,4 @@
-// 2019-08-19 03:21:37
+// 2019-08-19 03:22:27
 ///zbsp_load_lump_effects(buffer, map)
 /*
     Loads effects lump data from given buffer into the given map
@@ -14,15 +14,11 @@ var _off = argument1[? "effects-diroff"], _len = argument1[? "effects-dirlen"];
 var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.EFFECTS], _data;
 buffer_seek(argument0, buffer_seek_start, _off);
 
-show_debug_message("EFFECT NUM : " + string(_num));
-
 _data = ds_grid_create(2, _num);
 for (var i=0; i<_num; i++)
 {
     // effect shader string
     _data[# 0, i] = zbsp_read_str(argument0, 64);
-    
-    show_debug_message("EFFECT " + string(i + 1) + " : " + string(_data[# 0, i]));
     
     // brush index
     _data[# 1, i] = buffer_read(argument0, buffer_u32);

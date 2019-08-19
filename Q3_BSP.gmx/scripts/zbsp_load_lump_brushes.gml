@@ -18,13 +18,13 @@ _data = ds_grid_create(3, _num);
 for (var i=0; i<_num; i++)
 {
     // brushside idx
-    _data[# 0, i] = buffer_read(argument0, buffer_u32);
+    _data[# 0, i] = buffer_read(argument0, buffer_s32);
     
     // number of brushsides
-    _data[# 1, i] = buffer_read(argument0, buffer_u32);
+    _data[# 1, i] = buffer_read(argument0, buffer_s32);
     
     // texture idx
-    _data[# 2, i] = buffer_read(argument0, buffer_u32);
+    _data[# 2, i] = buffer_read(argument0, buffer_s32);
 }
 
 argument1[? "brushes-num"] = _num;
