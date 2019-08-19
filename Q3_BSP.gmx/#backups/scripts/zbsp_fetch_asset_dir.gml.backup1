@@ -1,0 +1,21 @@
+// 2019-08-20 02:16:27
+///zbsp_fetch_asset_dir(datamap, file)
+/*
+    Tries to return the path to asset with given relative asset path.
+*/
+
+var _mapdir = argument0[? "res-dir"] + "\" + argument1 + ".jpg";
+var _basedir = "bspdata\res\" + argument1 + ".jpg";
+
+if (file_exists(_mapdir))
+{
+    return _mapdir;
+}
+else if (file_exists(_basedir))
+{
+    return _basedir;
+}
+else
+{
+    return "";
+}

@@ -2,17 +2,23 @@
 /*
     Loads lightmaps lump data from given buffer into the given map
     ==========================================================
-    The data can be accessed from the given map with the key "lightmaps-data", Which refers to a ds_list,
+    The list of 128x128 lightmap sprites can be accessed from the given map with the key "lightmaps-sprites", Which refers to a ds_list,
     with length same as the value from the map's "lightmaps-num" value.
-    The list contains a surface that contains each lightmap data.
+    
+    The lightmap's texture atlas related informations can be accessed from the given map with the key "lightmaps-data".
+    One lightmap for each row, with following indices :
+    data[# 0, row] : lightmap atlas index
+    data[# 1-2, row] : lightmap uv start
+    data[# 3-4, row] : lightmap uv end
 */
 
 var _off = argument1[? "lightmaps-diroff"], _len = argument1[? "lightmaps-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.LIGHTMAPS], _data;
+var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.LIGHTMAPS], _data, _sprites;
 buffer_seek(argument0, buffer_seek_start, _off);
 
+/// Load lightmap datas
 // create list to shove lightmaps into
-_data = ds_list_create();
+_sprites = ds_list_create();
 
 // prepare vertex buffer
 vertex_format_begin();
@@ -24,9 +30,9 @@ var _vb = vertex_create_buffer();
 show_debug_message("LIGHTMAP BUILDING BEGIN!");
 var _time = get_timer();
 var _lmapoff = 16384; // lightmap's each channels size (in bytes)
+var _surf = surface_create(128, 128);
 for (var i=0; i<_num; i++)
 {
-    var _surf = surface_create(128, 128);
     var _coff = _off + _lmapoff * (i * 3); // current lightmap's offset
     var _ctr = 0;
     
@@ -51,7 +57,7 @@ for (var i=0; i<_num; i++)
     surface_reset_target();
     
     // Append lightmap
-    ds_list_add(_data, _surf);
+    ds_list_add(_sprites, sprite_create_from_surface(_surf, 0, 0, 128, 128, false, false, 0, 0));
     
     // (DEBUG) lightmap save
     // show_debug_message("Lightmap dumping to [" + string(argument1[? "res-dir"]) + "\lightmapdump\lmap" + string(i) + ".png]");
@@ -65,6 +71,24 @@ show_debug_message("LIGHTMAP BUILDING DONE (" + string((get_timer() - _time) / 1
 // cleanup
 vertex_delete_buffer(_vb);
 vertex_format_delete(_vf);
+surface_free(_surf);
+
+/// Build lightmap atlas info
+_data = ds_grid_create(5, _num);
+for (var i=0; i<_num; i++)
+{
+    // atlas idx
+    _data[# 0, i] = 0;
+    
+    // atlas uv begin
+    _data[# 1, i] = 0;
+    _data[# 2, i] = 0;
+    
+    // atlas uv end
+    _data[# 3, i] = 1;
+    _data[# 4, i] = 1;
+}
 
 argument1[? "lightmaps-num"] = _num;
+argument1[? "lightmaps-sprites"] = _sprites;
 argument1[? "lightmaps-data"] = _data;

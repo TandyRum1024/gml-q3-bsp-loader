@@ -9,8 +9,8 @@ var _phi = argument7, _theta = argument8;
 var _dot, _col;
 
 // calculate light vectors
-var _sint = dsin(_theta), _cost = dcos(_theta);
-var _sinp = dsin(_phi), _cosp = dcos(_phi);
+var _sint = sin(_theta), _cost = cos(_theta);
+var _sinp = sin(_phi), _cosp = cos(_phi);
 var _lx = _sint * _cosp;
 var _ly = _sint * _sinp;
 var _lz = _cost;

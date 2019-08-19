@@ -1,4 +1,4 @@
-// 2019-08-19 21:36:50
+// 2019-08-20 07:59:03
 ///zbsp_load_map(filename)
 /*
     Loads Quake 3 map from zip/pk3 file, And returns ds_map containing the map information.
@@ -89,7 +89,7 @@ if (!directory_exists(_assetfolder))
     zbsp_append_log(bspdata, "Unpacking base assets... this might take a while");
     show_debug_message("Unpacking base assets... this might take a while");
     
-    zip_unzip("oa_assets.pk3", _assetfolder);
+    zip_unzip("hires_assets.pk3", _assetfolder);
 }
 
 zbsp_append_log(bspdata, "Unpacking level...");
@@ -221,11 +221,7 @@ if (directory_exists(_maptexdir))
     }
 }
 
-// TODO : Work on texture packing!!
 bspdata[? "res-tex-dir"] = _texdirlist;
-bspdata[? "res-texatlas-w"] = 2048;
-bspdata[? "res-texatlas-h"] = 2048;
-bspdata[? "res-texatlas"] = surface_create(bspdata[? "res-texatlas-w"], bspdata[? "res-texatlas-h"]);
 
 // ==================================================================
 /// (Finally) Begin loading from BSP file
@@ -320,6 +316,77 @@ zbsp_load_lump_lightvols(_filebuffer, bspdata);
 // Load visdata
 show_debug_message("Loading visdata..");
 zbsp_load_lump_visdata(_filebuffer, bspdata);
+
+// Build texture atlases
+show_debug_message("Building texture atlases..");
+show_debug_message(string(bspdata[? "textures-num"]) + " textures..");
+bspdata[? "textures-list"] = ds_list_create();
+bspdata[? "textures-sprites"] = ds_list_create();
+
+image_system_init();
+bspdata[? "textures-indexer"] = ds_list_create();
+var _textures = bspdata[? "textures-data"];
+
+var _ig = image_group_create("texture");
+image_stream_start(_ig, 2048, 2048, 1, false, false);
+image_stream_add(_ig, "texDefault", "texDefault.png", 1, 0, 0);
+for (var i=0; i<bspdata[? "textures-num"]; i++)
+{
+    var _asset = zbsp_fetch_asset_dir(bspdata, _textures[# 0, i] + ".jpg");
+    
+    if (_asset != "")
+    {
+        var _spr = sprite_add(_asset, 1, false, false, 0, 0);
+        show_debug_message("Adding texture [" + _asset + "] to the mix...");
+        image_stream_add(_ig, "tex" + string(i), _asset, 1, 0, 0);
+        ds_list_add(bspdata[? "textures-indexer"], "tex" + string(i));
+        
+        ds_list_add(bspdata[? "textures-sprites"], _spr);
+        ds_list_add(bspdata[? "textures-list"], sprite_get_texture(_spr, 0));
+    }
+    else
+    {
+        show_debug_message("Can't find [" + _textures[# 0, i] + "]!");
+        ds_list_add(bspdata[? "textures-indexer"], "texDefault");
+        ds_list_add(bspdata[? "textures-list"], sprite_get_texture(sprNotexture, 0));
+    }
+}
+image_stream_finish(_ig);
+bspdata[? "res-texatlas"] = image_group_find_image(_ig, "texDefault");
+
+show_debug_message("BUILDING LIGHTMAP ATLAS (" + string(bspdata[? "lightmaps-num"]) + " TEXTURES)");
+var _lmspr = bspdata[? "lightmaps-sprites"];
+var _lightinfos = bspdata[? "lightmaps-data"];
+
+var _npower = 10;
+var _surfwid = 1 << _npower, _surfhei = (1 << _npower) + 10;
+var _cols = _surfhei div 130;
+var _rows = (_surfwid - 10) div 130;
+
+while (_cols * _rows < bspdata[? "lightmaps-num"])
+{
+    _npower++;
+    _surfwid = 1 << _npower;
+    _surfhei = (1 << _npower) + 10;
+    _cols = _surfhei div 130;
+    _rows = (_surfwid - 10) div 130;
+}
+
+bspdata[? "res-lightatlas"] = surface_create(_surfwid, _surfhei);
+surface_set_target(bspdata[? "res-lightatlas"]);
+draw_clear(c_white);
+for (var i=0; i<bspdata[? "lightmaps-num"]; i++)
+{
+    var _wx = (i % _cols) * 130;
+    var _wy = (i div _cols) * 130 + 10;
+    draw_sprite(_lmspr[| i], 0, _wx, _wy);
+    
+    _lightinfos[# 1, i] = _wx / _surfwid;
+    _lightinfos[# 2, i] = 1 - (_wy / _surfhei);
+    _lightinfos[# 3, i] = (_wx + 128) / _surfwid;
+    _lightinfos[# 4, i] = 1 - ((_wy + 128) / _surfhei);
+}
+surface_reset_target();
 
 // (DEBUG) Build wireframe vertex buffer of leaf bounding box
 show_debug_message("Building Wireframe VB..");
@@ -484,17 +551,24 @@ show_debug_message("Building Faces VB..");
 vertex_format_begin();
 vertex_format_add_position_3d();
 vertex_format_add_colour();
-vertex_format_add_normal();
-zbspDebugVF2 = vertex_format_end();
+vertex_format_add_textcoord();
+vertex_format_add_textcoord();
+zbspLevelVF = vertex_format_end();
 zbspDebugMeshVB = vertex_create_buffer();
 
-vertex_begin(zbspDebugMeshVB, zbspDebugVF2);
+//vertex_begin(zbspDebugMeshVB, zbspDebugVF2);
 var _faces = bspdata[? "faces-data"];
 var _vertices = bspdata[? "vertices-data"];
 var _meshverts = bspdata[? "meshverts-data"];
+var _lmapinfo = bspdata[? "lightmaps-data"];
+var _texindexer = bspdata[? "textures-indexer"];
+
+bspdata[? "faces-buffers"] = ds_list_create();
 for (var i=0; i<bspdata[? "faces-num"]; i++)
 {
     var _type = _faces[# 2, i];
+            var _buff = vertex_create_buffer();
+            vertex_begin(_buff, zbspDebugVF2);
     
     switch (_type)
     {
@@ -505,6 +579,28 @@ for (var i=0; i<bspdata[? "faces-num"]; i++)
             
             // fetch first vertex idx
             var _vertidx = _faces[# 3, i];
+            
+            // fetch texture index
+            var _texidx = image_group_find_image(_ig, _texindexer[| _faces[# 0, i]]);
+            var _texuv = image_get_uvs(_texidx, 0);
+            
+            // fetch lightmap index
+            var _lmapidx = _faces[# 7, i];
+            
+            if (_lmapidx >= 0)
+            {
+                var _lmapminu = _lmapinfo[# 1, _lmapidx];
+                var _lmapminv = _lmapinfo[# 2, _lmapidx];
+                var _lmapmaxu = _lmapinfo[# 3, _lmapidx];
+                var _lmapmaxv = _lmapinfo[# 4, _lmapidx];
+            }
+            else
+            {
+                var _lmapminu = 0.0;
+                var _lmapminv = 0.0;
+                var _lmapmaxu = 0.0;
+                var _lmapmaxv = 0.0;
+            }
             
             for (var j=0; j<_meshvertnum; j++)
             {
@@ -521,20 +617,27 @@ for (var i=0; i<bspdata[? "faces-num"]; i++)
                 var _cvertex = _vertidx + _meshverts[| _meshvertidx + j];
                 
                 // append vertex data to buffer
-                vertex_position_3d(zbspDebugMeshVB, _vertices[# 0, _cvertex], _vertices[# 1, _cvertex], _vertices[# 2, _cvertex]);
-                vertex_colour(zbspDebugMeshVB, _vertices[# 10, _cvertex], _vertices[# 11, _cvertex]);
-                vertex_normal(zbspDebugMeshVB, _vertices[# 7, _cvertex], _vertices[# 8, _cvertex], _vertices[# 9, _cvertex]);
+                vertex_position_3d(_buff, _vertices[# 0, _cvertex], _vertices[# 1, _cvertex], _vertices[# 2, _cvertex]);
+                vertex_colour(_buff, _vertices[# 10, _cvertex], _vertices[# 11, _cvertex]);
+                //vertex_texcoord(zbspDebugMeshVB, lerp(_texuv[0], _texuv[2], _vertices[# 3, _cvertex]), lerp(_texuv[3], _texuv[1], _vertices[# 4, _cvertex]));
+                vertex_texcoord(_buff, _vertices[# 3, _cvertex], _vertices[# 4, _cvertex]);
+                vertex_texcoord(_buff, lerp(_texuv[0], _texuv[2], _vertices[# 5, _cvertex]), lerp(_texuv[3], _texuv[1], _vertices[# 6, _cvertex]));
+                vertex_normal(_buff, _vertices[# 7, _cvertex], _vertices[# 8, _cvertex], _vertices[# 9, _cvertex]);
             }
+            
             break;
             
         case 2: // Bezier patch (Draw control points for now)
             
             break;
     }
+            vertex_end(_buff);
+            // vertex_freeze(_buff);
+            ds_list_add(bspdata[? "faces-buffers"], _buff);
 }
 
-vertex_end(zbspDebugMeshVB);
-vertex_freeze(zbspDebugMeshVB);
+// vertex_end(zbspDebugMeshVB);
+// vertex_freeze(zbspDebugMeshVB);
 
 // (DEBUG) Build lightvol visualizations
 // http://www.mralligator.com/q3/#Lightvols

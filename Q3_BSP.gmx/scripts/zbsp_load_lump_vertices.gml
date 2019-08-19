@@ -30,11 +30,11 @@ for (var i=0; i<_num; i++)
     
     // texture uv
     _data[# 3, i] = buffer_read(argument0, buffer_f32);
-    _data[# 4, i] = buffer_read(argument0, buffer_f32);
+    _data[# 4, i] = 1 - buffer_read(argument0, buffer_f32);
     
     // lightmap uv
     _data[# 5, i] = buffer_read(argument0, buffer_f32);
-    _data[# 6, i] = buffer_read(argument0, buffer_f32);
+    _data[# 6, i] = 1 - buffer_read(argument0, buffer_f32);
     
     // normal
     _data[# 7, i] = buffer_read(argument0, buffer_f32);

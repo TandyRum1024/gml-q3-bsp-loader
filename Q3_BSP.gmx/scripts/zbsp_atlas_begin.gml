@@ -1,8 +1,6 @@
-///zbsp_atlas_begin(initw, inith)
+///zbsp_atlas_begin()
 /*
-    Begins building the texture atlas with given initial width/height
-    returns surface index that texture atlas will be written into.
+    Begins building the texture atlas
 */
 
-var _surf = surface_create(argument0, argument1);
-return _surf;
+ds_list_clear(zbspAtlasRectList);
