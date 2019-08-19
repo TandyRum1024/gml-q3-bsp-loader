@@ -20,6 +20,14 @@ for (var i=0; i<array_length_1d(global.BSPLumpNames); i++)
 {
     switch (i)
     {
+        case eBSPLUMP.ENTITIES:
+            break;
+            
+        case eBSPLUMP.VISDATA:
+            // Free visdata vector
+            if (ds_map_exists(bspdata, "visdata") && ds_exists(bspdata[? "visdata"], ds_type_list)) ds_list_destroy(bspdata[? "visdata"]);
+            break;
+        
         case eBSPLUMP.LEAFBRUSHES:
         case eBSPLUMP.LEAFFACES:
         case eBSPLUMP.MESHVERTS:

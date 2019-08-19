@@ -1,4 +1,4 @@
-// 2019-08-19 07:23:38
+// 2019-08-19 16:14:05
 ///zbsp_load_map(filename)
 /*
     Loads Quake 3 map from zip/pk3 file, And returns ds_map containing the map information.
@@ -317,6 +317,10 @@ zbsp_load_lump_lightmaps(_filebuffer, bspdata);
 show_debug_message("Loading lightvols..");
 zbsp_load_lump_lightvols(_filebuffer, bspdata);
 
+// Load visdata
+show_debug_message("Loading visdata..");
+zbsp_load_lump_visdata(_filebuffer, bspdata);
+
 // (DEBUG) Build wireframe vertex buffer of leaf bounding box
 show_debug_message("Building Wireframe VB..");
 vertex_format_begin();
@@ -327,6 +331,7 @@ zbspDebugBboxVB = vertex_create_buffer();
 
 vertex_begin(zbspDebugBboxVB, zbspDebugVF);
 var _models = bspdata[? "models-data"];
+var _leafs = bspdata[? "leafs-data"];
 var _nodes = bspdata[? "nodes-data"];
 for (var i=0; i<bspdata[? "models-num"]; i++)
 {
@@ -384,6 +389,52 @@ for (var i=0; i<bspdata[? "nodes-num"]; i++)
 {
     var _minx = _nodes[# 3, i], _miny = _nodes[# 4, i], _minz = _nodes[# 5, i];
     var _maxx = _nodes[# 6, i], _maxy = _nodes[# 7, i], _maxz = _nodes[# 8, i];
+    
+    // side 1
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    // side 2
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    // side 3
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    // side 4
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    
+    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+}
+
+for (var i=0; i<bspdata[? "leafs-num"]; i++)
+{
+    var _minx = _leafs[# 2, i], _miny = _leafs[# 3, i], _minz = _leafs[# 4, i];
+    var _maxx = _leafs[# 5, i], _maxy = _leafs[# 6, i], _maxz = _leafs[# 7, i];
     
     // side 1
     vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);

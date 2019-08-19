@@ -316,6 +316,10 @@ zbsp_load_lump_lightmaps(_filebuffer, bspdata);
 show_debug_message("Loading lightvols..");
 zbsp_load_lump_lightvols(_filebuffer, bspdata);
 
+// Load visdata
+show_debug_message("Loading visdata..");
+zbsp_load_lump_visdata(_filebuffer, bspdata);
+
 // (DEBUG) Build wireframe vertex buffer of leaf bounding box
 show_debug_message("Building Wireframe VB..");
 vertex_format_begin();
@@ -555,8 +559,8 @@ for (var _x=0; _x<_lightvolnx; _x++)
         for (var _z=0; _z<_lightvolnz; _z++)
         {
             var _lvolidx = _z * (_lightvolnx * _lightvolny) + _y * (_lightvolnx) + _x;
-            var _wpx = _x * _lightvolcellsizeh - _boxsz, _wpy = _y * _lightvolcellsizeh - _boxsz, _wpz = _z * _lightvolcellsizev - _boxsz;
-            var _wpx2 = _x * _lightvolcellsizeh + _boxsz, _wpy2 = _y * _lightvolcellsizeh + _boxsz, _wpz2 = _z * _lightvolcellsizev + _boxsz;
+            var _wpx = -_y * _lightvolcellsizeh - _boxsz, _wpy = _z * _lightvolcellsizeh - _boxsz, _wpz = _x * _lightvolcellsizev - _boxsz;
+            var _wpx2 = -_y * _lightvolcellsizeh + _boxsz, _wpy2 = _z * _lightvolcellsizeh + _boxsz, _wpz2 = _x * _lightvolcellsizev + _boxsz;
             
             // x-
             vertex_position_3d(zbspDebugLightvolVB, _wpx, _wpy, _wpz); vertex_colour(zbspDebugLightvolVB, _lightvols[# 0, _lvolidx], 1);
