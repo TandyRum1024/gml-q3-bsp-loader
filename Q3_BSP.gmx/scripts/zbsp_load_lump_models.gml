@@ -14,7 +14,7 @@
 */
 
 var _off = argument1[? "models-diroff"], _len = argument1[? "models-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.MODELS], _data;
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.MODELS], _data;
 buffer_seek(argument0, buffer_seek_start, _off);
 
 _data = ds_grid_create(10, _num);

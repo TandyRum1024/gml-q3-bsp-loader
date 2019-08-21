@@ -10,9 +10,10 @@ var _x4 = argument10, _y4 = argument11, _z4 = argument12;
 var _col = argument13;
 
 // build mesh
-vertex_position_3d(_vb, _x1, _y1, _z1); vertex_colour(_vb, _col, 1);
 vertex_position_3d(_vb, _x2, _y2, _z2); vertex_colour(_vb, _col, 1);
+vertex_position_3d(_vb, _x1, _y1, _z1); vertex_colour(_vb, _col, 1);
 vertex_position_3d(_vb, _x3, _y3, _z3); vertex_colour(_vb, _col, 1);
+
 vertex_position_3d(_vb, _x3, _y3, _z3); vertex_colour(_vb, _col, 1);
 vertex_position_3d(_vb, _x4, _y4, _z4); vertex_colour(_vb, _col, 1);
 vertex_position_3d(_vb, _x2, _y2, _z2); vertex_colour(_vb, _col, 1);

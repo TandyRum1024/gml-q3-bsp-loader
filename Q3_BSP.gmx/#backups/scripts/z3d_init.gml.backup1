@@ -1,7 +1,4 @@
-// 2019-08-18 00:46:02
-mouseSensitivity = 0.3;
-mouseLock = false;
-
+// 2019-08-22 04:10:20
 camX = 0;
 camY = 0;
 camZ = 0;
@@ -22,3 +19,4 @@ camUpY = 0;
 camUpZ = 1;
 
 d3d_start();
+// d3d_set_culling(true);

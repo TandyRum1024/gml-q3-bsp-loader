@@ -1,4 +1,4 @@
-// 2019-08-18 01:13:51
+// 2019-08-22 04:10:37
 camX = 0;
 camY = 0;
 camZ = 0;
@@ -19,3 +19,4 @@ camUpY = 0;
 camUpZ = 1;
 
 d3d_start();
+d3d_set_culling(true);

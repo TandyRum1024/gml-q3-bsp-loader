@@ -8,7 +8,7 @@
 */
 
 var _off = argument1[? "meshverts-diroff"], _len = argument1[? "meshverts-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.MESHVERTS], _data;
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.MESHVERTS], _data;
 buffer_seek(argument0, buffer_seek_start, _off);
 
 _data = ds_list_create();

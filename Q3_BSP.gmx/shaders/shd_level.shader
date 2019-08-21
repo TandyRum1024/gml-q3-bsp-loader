@@ -2,10 +2,10 @@
 // Simple passthrough vertex shader
 //
 attribute vec3 in_Position;                  // (x,y,z)
-//attribute vec3 in_Normal;                  // (x,y,z)     unused in this shader.
+attribute vec3 in_Normal;                  // (x,y,z)     unused in this shader.
 attribute vec4 in_Colour;                    // (r,g,b,a)
+attribute vec2 in_TextureCoord0;              // (u,v)
 attribute vec2 in_TextureCoord1;              // (u,v)
-attribute vec2 in_TextureCoord2;              // (u,v)
 
 varying vec2 v_vTexcoord1;
 varying vec2 v_vTexcoord2;
@@ -17,8 +17,8 @@ void main()
     gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * object_space_pos;
     
     v_vColour = in_Colour;
-    v_vTexcoord1 = in_TextureCoord1;
-    v_vTexcoord2 = in_TextureCoord2;
+    v_vTexcoord1 = in_TextureCoord0;
+    v_vTexcoord2 = in_TextureCoord1;
 }
 
 //######################_==_YOYO_SHADER_MARKER_==_######################@~//
@@ -32,6 +32,9 @@ uniform sampler2D uLightmap;
 
 void main()
 {
-    gl_FragColor = v_vColour * 2 * texture2D( gm_BaseTexture, v_vTexcoord1 ) * texture2D( uLightmap, v_vTexcoord2 );
+    vec4 testuv1 = vec4(v_vTexcoord1.x, v_vTexcoord1.y, 0.5, 1.0);
+    vec4 testuv2 = vec4(v_vTexcoord2.x, v_vTexcoord2.y, 0.5, 1.0);
+    
+    gl_FragColor = v_vColour * 2.0 * texture2D( gm_BaseTexture, v_vTexcoord1 ) * texture2D( uLightmap, v_vTexcoord2 );
 }
 

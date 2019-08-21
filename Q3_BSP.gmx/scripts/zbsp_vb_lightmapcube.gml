@@ -29,31 +29,31 @@ var _v7x = _xp, _v7y = _yp, _v7z = _zp;
 
 // Build mesh
 // Face 1
-_dot = zbsp_calc_normal(_v0x, _v0y, _v0z, _v1x, _v1y, _v1z, _v2x, _v2y, _v2z, _lx, _ly, _lz);
+_dot = zbsp_calc_lightdot(_v0x, _v0y, _v0z, _v1x, _v1y, _v1z, _v2x, _v2y, _v2z, _lx, _ly, _lz);
 _col = merge_color(_albedocol, _dircol, _dot);
 zbsp_vb_face(_vb, _v0x, _v0y, _v0z, _v1x, _v1y, _v1z, _v2x, _v2y, _v2z, _v3x, _v3y, _v3z, _col);
 
 // Face 2
-_dot = zbsp_calc_normal(_v1x, _v1y, _v1z, _v5x, _v5y, _v5z, _v3x, _v3y, _v3z, _lx, _ly, _lz);
+_dot = zbsp_calc_lightdot(_v1x, _v1y, _v1z, _v5x, _v5y, _v5z, _v3x, _v3y, _v3z, _lx, _ly, _lz);
 _col = merge_color(_albedocol, _dircol, _dot);
 zbsp_vb_face(_vb, _v1x, _v1y, _v1z, _v5x, _v5y, _v5z, _v3x, _v3y, _v3z, _v7x, _v7y, _v7z, _col);
 
 // Face 3
-_dot = zbsp_calc_normal(_v5x, _v5y, _v5z, _v4x, _v4y, _v4z, _v7x, _v7y, _v7z, _lx, _ly, _lz);
+_dot = zbsp_calc_lightdot(_v5x, _v5y, _v5z, _v4x, _v4y, _v4z, _v7x, _v7y, _v7z, _lx, _ly, _lz);
 _col = merge_color(_albedocol, _dircol, _dot);
 zbsp_vb_face(_vb, _v5x, _v5y, _v5z, _v4x, _v4y, _v4z, _v7x, _v7y, _v7z, _v6x, _v6y, _v6z, _col);
 
 // Face 4
-_dot = zbsp_calc_normal(_v4x, _v4y, _v4z, _v0x, _v0y, _v0z, _v6x, _v6y, _v6z, _lx, _ly, _lz);
+_dot = zbsp_calc_lightdot(_v4x, _v4y, _v4z, _v0x, _v0y, _v0z, _v6x, _v6y, _v6z, _lx, _ly, _lz);
 _col = merge_color(_albedocol, _dircol, _dot);
 zbsp_vb_face(_vb, _v4x, _v4y, _v4z, _v0x, _v0y, _v0z, _v6x, _v6y, _v6z, _v2x, _v2y, _v2z, _col);
 
 // Face 5
-_dot = zbsp_calc_normal(_v2x, _v2y, _v2z, _v3x, _v3y, _v3z, _v6x, _v6y, _v6z, _lx, _ly, _lz);
+_dot = zbsp_calc_lightdot(_v2x, _v2y, _v2z, _v3x, _v3y, _v3z, _v6x, _v6y, _v6z, _lx, _ly, _lz);
 _col = merge_color(_albedocol, _dircol, _dot);
 zbsp_vb_face(_vb, _v2x, _v2y, _v2z, _v3x, _v3y, _v3z, _v6x, _v6y, _v6z, _v7x, _v7y, _v7z, _col);
 
 // Face 6
-_dot = zbsp_calc_normal(_v2x, _v2y, _v2z, _v3x, _v3y, _v3z, _v6x, _v6y, _v6z, _lx, _ly, _lz);
+_dot = zbsp_calc_lightdot(_v2x, _v2y, _v2z, _v3x, _v3y, _v3z, _v6x, _v6y, _v6z, _lx, _ly, _lz);
 _col = merge_color(_albedocol, _dircol, _dot);
 zbsp_vb_face(_vb, _v4x, _v4y, _v4z, _v5x, _v5y, _v5z, _v0x, _v0y, _v0z, _v1x, _v1y, _v1z, _col);

@@ -1,4 +1,4 @@
-///zbsp_calc_normal(x1, y1, z1, x2, y2, z2, x3, y3, z3, vx, vy, vz)
+///zbsp_calc_lightdot(x1, y1, z1, x2, y2, z2, x3, y3, z3, vx, vy, vz)
 /*
     Calculates normal & returns result of dot product with given vector in 0..1 range
 */

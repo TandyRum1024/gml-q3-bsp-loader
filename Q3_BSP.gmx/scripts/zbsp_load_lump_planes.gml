@@ -4,15 +4,13 @@
     ==========================================================
     The data can be accessed from the given map with the key "planes-data", Which referes to a ds_grid,
     with height same as the value from the map's "planes-num" value.
-    Each row contains a data for each node, With following indices:
-    data[# 0, row] : Plane index
-    data[# 1-2, row] : Child node's indices
-    data[# 3-5, row] : Bounding box's minimum xyz position
-    data[# 6-8, row] : Bounding box's maximum xyz position
+    Each row contains a data for each plane, With following indices:
+    data[# 0-2, row] : Plane's xyz normal
+    data[# 3, row] : Plane's distance from (0, 0) origin
 */
 
 var _off = argument1[? "planes-diroff"], _len = argument1[? "planes-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.PLANES], _data;
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.PLANES], _data;
 buffer_seek(argument0, buffer_seek_start, _off);
 
 _data = ds_grid_create(4, _num);

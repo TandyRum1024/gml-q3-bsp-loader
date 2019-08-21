@@ -16,7 +16,7 @@
 */
 
 var _off = argument1[? "leafs-diroff"], _len = argument1[? "leafs-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.LEAFS], _data;
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.LEAFS], _data;
 buffer_seek(argument0, buffer_seek_start, _off);
 
 _data = ds_grid_create(12, _num);

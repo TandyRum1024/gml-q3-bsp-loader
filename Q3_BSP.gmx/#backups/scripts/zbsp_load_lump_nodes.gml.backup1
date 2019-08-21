@@ -1,4 +1,4 @@
-// 2019-08-19 17:58:27
+// 2019-08-19 17:58:50
 ///zbsp_load_lump_nodes(buffer, map)
 /*
     Loads nodes lump data from given buffer into the given map

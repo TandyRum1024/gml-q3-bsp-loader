@@ -3,7 +3,7 @@
   <Configs name="configs">
     <Config>Configs\Default</Config>
   </Configs>
-  <datafiles number="7" name="datafiles">
+  <datafiles number="8" name="datafiles">
     <datafile>
       <name>cannedheat.bsp</name>
       <exists>-1</exists>
@@ -123,6 +123,23 @@
       </ConfigOptions>
       <filename>lun3dm5.zip</filename>
     </datafile>
+    <datafile>
+      <name>lun3dm5.bsp</name>
+      <exists>-1</exists>
+      <size>22141152</size>
+      <exportAction>2</exportAction>
+      <exportDir></exportDir>
+      <overwrite>0</overwrite>
+      <freeData>-1</freeData>
+      <removeEnd>0</removeEnd>
+      <store>0</store>
+      <ConfigOptions>
+        <Config name="Default">
+          <CopyToMask>9223372036854775807</CopyToMask>
+        </Config>
+      </ConfigOptions>
+      <filename>lun3dm5.bsp</filename>
+    </datafile>
   </datafiles>
   <NewExtensions>
     <extension index="0">extensions\ImNotGUI</extension>
@@ -216,11 +233,13 @@
     </scripts>
     <scripts name="ZBSP">
       <scripts name="HELPER">
+        <script>scripts\zbsp_helper_vars.gml</script>
         <script>scripts\zbsp_append_log.gml</script>
         <script>scripts\zbsp_read_str.gml</script>
+        <script>scripts\zbsp_calc_lightdot.gml</script>
         <script>scripts\zbsp_vb_lightmapcube.gml</script>
         <script>scripts\zbsp_vb_face.gml</script>
-        <script>scripts\zbsp_calc_normal.gml</script>
+        <script>scripts\zbsp_vb_wirecube.gml</script>
       </scripts>
       <scripts name="LUMPS">
         <script>scripts\zbsp_load_lump_entities.gml</script>
@@ -293,6 +312,7 @@
   </scripts>
   <shaders name="shaders">
     <shader type="GLSLES">shaders\shd_level.shader</shader>
+    <shader type="GLSLES">shaders\shd_level_notex.shader</shader>
   </shaders>
   <fonts name="fonts">
     <font>fonts\fntMain16</font>

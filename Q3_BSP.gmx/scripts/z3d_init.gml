@@ -18,3 +18,4 @@ camUpY = 0;
 camUpZ = 1;
 
 d3d_start();
+d3d_set_culling(true);

@@ -10,7 +10,7 @@
 */
 
 var _off = argument1[? "effects-diroff"], _len = argument1[? "effects-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.EFFECTS], _data;
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.EFFECTS], _data;
 buffer_seek(argument0, buffer_seek_start, _off);
 
 _data = ds_grid_create(2, _num);

@@ -13,7 +13,7 @@
 */
 
 var _off = argument1[? "lightmaps-diroff"], _len = argument1[? "lightmaps-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.LIGHTMAPS], _data, _sprites;
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.LIGHTMAPS], _data, _sprites;
 buffer_seek(argument0, buffer_seek_start, _off);
 
 /// Load lightmap datas
@@ -27,6 +27,7 @@ vertex_format_add_color();
 var _vf = vertex_format_end();
 var _vb = vertex_create_buffer();
 
+zbsp_append_log(argument1, "LIGHTMAP BUILDING BEGIN!");
 show_debug_message("LIGHTMAP BUILDING BEGIN!");
 var _time = get_timer();
 var _lmapoff = 16384; // lightmap's each channels size (in bytes)
@@ -59,14 +60,17 @@ for (var i=0; i<_num; i++)
     // Append lightmap
     ds_list_add(_sprites, sprite_create_from_surface(_surf, 0, 0, 128, 128, false, false, 0, 0));
     
+    /*
     // (DEBUG) lightmap save
-    // show_debug_message("Lightmap dumping to [" + string(argument1[? "res-dir"]) + "\lightmapdump\lmap" + string(i) + ".png]");
-    if (ds_map_exists(argument1, "res-dir") && directory_exists(argument1[? "res-dir"]))
+    show_debug_message("Lightmap dumping to [" + string(argument1[? "meta-res-dir"]) + "\lightmapdump\lmap" + string(i) + ".png]");
+    if (ds_map_exists(argument1, "meta-res-dir") && directory_exists(argument1[? "meta-res-dir"]))
     {
-        surface_save(_surf, argument1[? "res-dir"] + "\lightmapdump\lmap" + string(i) + ".png");
+        surface_save(_surf, argument1[? "meta-res-dir"] + "\lightmapdump\lmap" + string(i) + ".png");
     }
+    */
 }
 show_debug_message("LIGHTMAP BUILDING DONE (" + string((get_timer() - _time) / 1000000) + "s)");
+zbsp_append_log(argument1, "LIGHTMAP BUILDING DONE (" + string((get_timer() - _time) / 1000000) + "s)");
 
 // cleanup
 vertex_delete_buffer(_vb);
@@ -77,7 +81,7 @@ surface_free(_surf);
 _data = ds_grid_create(5, _num);
 for (var i=0; i<_num; i++)
 {
-    // atlas idx
+    // atlas idx (reserved)
     _data[# 0, i] = 0;
     
     // atlas uv begin

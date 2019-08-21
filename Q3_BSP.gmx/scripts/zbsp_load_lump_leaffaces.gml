@@ -8,7 +8,7 @@
 */
 
 var _off = argument1[? "leaffaces-diroff"], _len = argument1[? "leaffaces-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.LEAFFACES], _data;
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.LEAFFACES], _data;
 buffer_seek(argument0, buffer_seek_start, _off);
 
 _data = ds_list_create();

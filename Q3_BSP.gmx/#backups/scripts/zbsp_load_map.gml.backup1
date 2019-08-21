@@ -1,53 +1,34 @@
-// 2019-08-20 07:17:05
-///zbsp_load_map(filename)
+// 2019-08-22 06:11:10
+///zbsp_load_map(filename, buildlevelmesh, builddebugmesh)
 /*
     Loads Quake 3 map from zip/pk3 file, And returns ds_map containing the map information.
+    =======================================================================================
+    filename : direction to the Quake 3 map file. zip, pk3 and bsp files are supported.
+    Feeding zip & pk3 files will make the script try to load the extra texture data & map metadata.
+    
+    buildlevelmesh : if set to true, the script will try to generate every face's mesh data into a vertex buffer.
+    Then it can be used to render the levels with the vertex buffer.
+    The list of buffers can be indexed from returned ds_map with the key "vb-faces" and each faces from the list can be rendered with vertex_submit() with [pr_triangle] primitive type.
+    Each face has it's texture index data (see also : zbsp_load_lump_faces() for other data's indexes)
+    And you can use that to fetch it's texture (ready to passed into vertex_submit) from the ds_list indexed with the key "textures-list".
+    
+    builddebugmesh : if set to true, the script will generate the Bounds visualization vertex buffer and Lightvol visualization vertex buffer.
+    The bounds visualization vertex buffer contains the vertex buffer containing the set of line segments that visualizes the bounds data of Nodes, Leafs and Models.
+    The buffer can be indexed from returned ds_map with the key "vb-debug-bbox" and can be rendered with vertex_submit() with [pr_linelist] primitive type.
+    
+    The lightvol visualization vertex buffer contains the vertex buffer containing the set of triangles that visualizes the LightVol (Uniform grid of light informations) with grid of cube.
+    It visualizes the lights information about ambient light, directional light and its direction with a grid of 3D cubes,
+    The buffer can be indexed from returned ds_map with the key "vb-debug-lightlvol" and can be rendered with vertex_submit() with [pr_trianglelist] primitive type.
 */
 
 // ==================================================================
 /// define variables
 // ==================================================================
+buildlevelmesh = argument1;
+builddebugmesh = argument2;
+
 // helper variables that will help you (& me) to index the bsp map data structure
-enum eBSPLUMP
-{
-    ENTITIES = 0,
-    TEXTURES,
-    PLANES,
-    NODES,
-    LEAFS,
-    LEAFFACES,
-    LEAFBRUSHES,
-    MODELS,
-    BRUSHES,
-    BRUSHSIDES,
-    VERTICES,
-    MESHVERTS,
-    EFFECTS,
-    FACES,
-    LIGHTMAPS,
-    LIGHTVOLS,
-    VISDATA
-}
-var _idx = 0;
-global.BSPLumpNames = -1; // Lump names in string
-global.BSPLumpSizes = -1; // Each lumps size in bytes
-global.BSPLumpNames[_idx] = "entities"; global.BSPLumpSizes[_idx++] = 1;
-global.BSPLumpNames[_idx] = "textures"; global.BSPLumpSizes[_idx++] = 72;
-global.BSPLumpNames[_idx] = "planes"; global.BSPLumpSizes[_idx++] = 16;
-global.BSPLumpNames[_idx] = "nodes"; global.BSPLumpSizes[_idx++] = 36;
-global.BSPLumpNames[_idx] = "leafs"; global.BSPLumpSizes[_idx++] = 48;
-global.BSPLumpNames[_idx] = "leaffaces"; global.BSPLumpSizes[_idx++] = 4;
-global.BSPLumpNames[_idx] = "leafbrushes"; global.BSPLumpSizes[_idx++] = 4;
-global.BSPLumpNames[_idx] = "models"; global.BSPLumpSizes[_idx++] = 40;
-global.BSPLumpNames[_idx] = "brushes"; global.BSPLumpSizes[_idx++] = 12;
-global.BSPLumpNames[_idx] = "brushsides"; global.BSPLumpSizes[_idx++] = 8;
-global.BSPLumpNames[_idx] = "vertices"; global.BSPLumpSizes[_idx++] = 44;
-global.BSPLumpNames[_idx] = "meshverts"; global.BSPLumpSizes[_idx++] = 4;
-global.BSPLumpNames[_idx] = "effects"; global.BSPLumpSizes[_idx++] = 72;
-global.BSPLumpNames[_idx] = "faces"; global.BSPLumpSizes[_idx++] = 104;
-global.BSPLumpNames[_idx] = "lightmaps"; global.BSPLumpSizes[_idx++] = 49152;
-global.BSPLumpNames[_idx] = "lightvols"; global.BSPLumpSizes[_idx++] = 8;
-global.BSPLumpNames[_idx] = "visdata"; global.BSPLumpSizes[_idx++] = 1;
+zbsp_helper_vars();
 
 // data related variables
 var bspdata = ds_map_create(); // map containing the bsp data
@@ -57,10 +38,11 @@ var _filename = string_copy(filename_name(argument0), 1, string_pos(".", argumen
 // setup values
 bspdata[? "success"] = true;
 bspdata[? "error"] = "";
-bspdata[? "filetype"] = _filetype;
-bspdata[? "filename"] = _filename;
-bspdata[? "map-name"] = _filename;
-bspdata[? "debug_log"] = "ZBSP_LOAD_MAP() BEGIN... FILE : [" + string(argument0) + "]#===#";
+bspdata[? "has-asset"] = true;
+bspdata[? "meta-filetype"] = _filetype;
+bspdata[? "meta-filename"] = _filename;
+bspdata[? "meta-map-name"] = _filename;
+bspdata[? "meta-debug-log"] = "ZBSP_LOAD_MAP() BEGIN... FILE : [" + string(argument0) + "]#===#";
 
 if (!file_exists(argument0))
 {
@@ -82,7 +64,7 @@ var _assetfolder = _datafolder + "\res";
 var _bspfile = "";
 
 // add map resource direction to the map so we can access those later
-bspdata[? "res-dir"] = _mapfolder;
+bspdata[? "meta-res-dir"] = _mapfolder;
 
 if (!directory_exists(_assetfolder))
 {
@@ -109,6 +91,7 @@ if (!directory_exists(_mapfolder))
 }
 
 zbsp_append_log(bspdata, "DATA FOLDER : " + _datafolder);
+show_debug_message("DATA FOLDER : " + _datafolder);
 
 // Do appropriate processings for each given file types
 var _result = 0;
@@ -131,8 +114,11 @@ switch (_filetype)
         break;
         
     case "bsp":
+        show_debug_message("BSP FILE");
         _result = 1;
         _bspfile = argument0;
+        
+        bspdata[? "has-asset"] = false;
         break;
 }
 if (_result == 0)
@@ -142,12 +128,13 @@ if (_result == 0)
     
     bspdata[? "success"] = false;
     bspdata[? "error"] = "FILEINVALID";
+    show_debug_message("ABORT");
     zbsp_append_log(bspdata, "ZBSP_LOAD_MAP() END");
     return bspdata;
 }
 
 // Read map related data
-// map description
+// .arena metadata
 var _mapscriptdir = _mapfolder + "\scripts";
 if (directory_exists(_mapscriptdir))
 {
@@ -158,26 +145,89 @@ if (directory_exists(_mapscriptdir))
         show_debug_message("Reading map .arena file..");
         
         var _arenafile = file_text_open_read(_arenadir);
+        var _arenacontent = "";
         while (!file_text_eof(_arenafile))
         {
             var _ln = file_text_readln(_arenafile);
+            _arenacontent += _ln;
             
+            // Found map's actual name
             if (string_pos("longname", _ln) != 0)
             {
                 var _quotebegin = string_pos('"', _ln);
                 var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
-                bspdata[? "map-name"] = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
-                break;
+                var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
+                
+                bspdata[? "meta-arena-longname"] = _content;
+            }
+            
+            // Found map's map file
+            if (string_pos("map", _ln) != 0)
+            {
+                var _quotebegin = string_pos('"', _ln);
+                var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
+                var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
+                
+                bspdata[? "meta-arena-map"] = _content;
+            }
+            
+            // Found map's type / tag list
+            if (string_pos("type", _ln) != 0)
+            {
+                var _quotebegin = string_pos('"', _ln);
+                var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
+                var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
+                
+                // Split them into the lists
+                var _typelist = ds_list_create();
+                var _blankpos = string_pos(" ", _content);
+                
+                while (_blankpos != 0)
+                {
+                    ds_list_add(_typelist, string_copy(_content, 1, _blankpos - 1));
+                    _content = string_delete(_content, 1, _blankpos);
+                    _blankpos = string_pos(" ", _content);
+                }
+                ds_list_add(_typelist, _content);
+                
+                bspdata[? "meta-arena-type"] = _typelist;
+            }
+            
+            // Found map's bot list
+            if (string_pos("bots", _ln) != 0)
+            {
+                var _quotebegin = string_pos('"', _ln);
+                var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
+                var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
+                
+                // Split them into the lists
+                var _botslist = ds_list_create();
+                var _blankpos = string_pos(" ", _content);
+                
+                while (_blankpos != 0)
+                {
+                    ds_list_add(_botslist, string_copy(_content, 1, _blankpos - 1));
+                    _content = string_delete(_content, 1, _blankpos);
+                    _blankpos = string_pos(" ", _content);
+                }
+                ds_list_add(_botslist, _content);
+                
+                bspdata[? "meta-arena-bots"] = _botslist;
             }
         }
         file_text_close(_arenafile);
+        
+        bspdata[? "meta-arena"] = _arenacontent;
+        bspdata[? "meta-map-name"] = bspdata[? "meta-arena-longname"];
     }
     else
     {
         show_debug_message("Can't find / read .arena file.. :(");
     }
 }
-// map textures
+
+// Fetch map's texture assets direction while walking along the map folder.
+// since this data is unused but I'm leaving this mass of data to use in other cases, You may comment this chunk of code, If you want to juice out the last bits of loading time.
 var _maptexdir = _mapfolder + "\textures";
 if (directory_exists(_maptexdir))
 {
@@ -219,9 +269,10 @@ if (directory_exists(_maptexdir))
         }
         file_find_close();
     }
+    ds_queue_destroy(_dirqueue);
+    bspdata[? "meta-res-tex-dir"] = _texdirlist;
 }
 
-bspdata[? "res-tex-dir"] = _texdirlist;
 
 // ==================================================================
 /// (Finally) Begin loading from BSP file
@@ -231,15 +282,16 @@ buffer_seek(_filebuffer, buffer_seek_start, 0);
 
 // Header
 zbsp_append_log(bspdata, "[HEADER] ===================");
-var _magic = zbsp_read_str(_filebuffer, 4); zbsp_append_log(bspdata, "MAGIC STRING : " + _magic);
-var _version = buffer_read(_filebuffer, buffer_s32); zbsp_append_log(bspdata, "BSP VERSION : " + string(_version));
-if (_magic != "IBSP" || _version != $2e)
+var _magic = zbsp_read_str(_filebuffer, 4); zbsp_append_log(bspdata, "MAGIC STRING : " + _magic); show_debug_message("MAGIC STRING : " + _magic);
+var _version = buffer_read(_filebuffer, buffer_s32); zbsp_append_log(bspdata, "BSP VERSION : " + string(_version)); show_debug_message("BSP VERSION : " + string(_version));
+if (_magic != "IBSP")
 {
     /// possibly wrong file type
     zbsp_append_log(bspdata, "INVALID FILE... ABORT");
     
     bspdata[? "success"] = false;
     bspdata[? "error"] = "FILEINVALID";
+    show_debug_message("ABORT");
     zbsp_append_log(bspdata, "ZBSP_LOAD_MAP() END");
     return bspdata;
 }
@@ -317,361 +369,501 @@ zbsp_load_lump_lightvols(_filebuffer, bspdata);
 show_debug_message("Loading visdata..");
 zbsp_load_lump_visdata(_filebuffer, bspdata);
 
-// Build texture atlases
-show_debug_message("Building texture atlases..");
-show_debug_message(string(bspdata[? "textures-num"]) + " textures..");
+
+// ==================================================================
+/// Process textures information
+// ==================================================================
+// Fetch & Load textures required for map
+zbsp_append_log(bspdata, "Loading textures data.. (" + string(bspdata[? "textures-num"]) + " textures)");
+show_debug_message("Loading textures data.. (" + string(bspdata[? "textures-num"]) + " textures)");
+
+// List of texture loaded into sprites & it's texture index (for use in rendering)
 bspdata[? "textures-list"] = ds_list_create();
 bspdata[? "textures-sprites"] = ds_list_create();
 
-image_system_init();
-bspdata[? "textures-indexer"] = ds_list_create();
 var _textures = bspdata[? "textures-data"];
-
-var _ig = image_group_create("texture");
-image_stream_start(_ig, 2048, 2048, 1, false, false);
-image_stream_add(_ig, "texDefault", "texDefault.png", 1, 0, 0);
 for (var i=0; i<bspdata[? "textures-num"]; i++)
 {
-    var _asset = zbsp_fetch_asset_dir(bspdata, _textures[# 0, i] + ".jpg");
+    var _asset = zbsp_fetch_asset_dir(bspdata, _textures[# eBSP_TEXTURE.DIRECTORY, i] + ".jpg");
     
     if (_asset != "")
     {
-        var _spr = sprite_add(_asset, 1, false, false, 0, 0);
-        show_debug_message("Adding texture [" + _asset + "] to the mix...");
-        image_stream_add(_ig, "tex" + string(i), _asset, 1, 0, 0);
-        ds_list_add(bspdata[? "textures-indexer"], "tex" + string(i));
+        zbsp_append_log(bspdata, "Found texture [" + _asset + "]");
+        show_debug_message("Found texture [" + _asset + "]");
         
+        var _spr = sprite_add(_asset, 1, false, false, 0, 0);
         ds_list_add(bspdata[? "textures-sprites"], _spr);
         ds_list_add(bspdata[? "textures-list"], sprite_get_texture(_spr, 0));
     }
     else
     {
-        show_debug_message("Can't find [" + _textures[# 0, i] + "]!");
-        ds_list_add(bspdata[? "textures-indexer"], "texDefault");
-        ds_list_add(bspdata[? "textures-list"], sprite_get_texture(sprNotexture, 0));
+        zbsp_append_log(bspdata, "Can't find [" + _textures[# eBSP_TEXTURE.DIRECTORY, i] + "]!");
+        show_debug_message("Can't find [" + _textures[# eBSP_TEXTURE.DIRECTORY, i] + "]!");
+        
+        ds_list_add(bspdata[? "textures-list"], sprite_get_texture(sprNotexture, 0)); // You can replace sprNotexture to a default error texture.
     }
 }
-image_stream_finish(_ig);
-bspdata[? "res-texatlas"] = image_group_find_image(_ig, "texDefault");
 
+// ==================================================================
+/// Build lightmap atlas
+// ==================================================================
+zbsp_append_log(bspdata, "BUILDING LIGHTMAP ATLAS (" + string(bspdata[? "lightmaps-num"]) + " TEXTURES)");
 show_debug_message("BUILDING LIGHTMAP ATLAS (" + string(bspdata[? "lightmaps-num"]) + " TEXTURES)");
+
+// List of lightmaps texture index (for use in rendering)
+bspdata[? "lightmaps-list"] = ds_list_create();
+
+// Lightmap informations and Lightmap sprites
 var _lmspr = bspdata[? "lightmaps-sprites"];
 var _lightinfos = bspdata[? "lightmaps-data"];
 
-var _npower = 10;
-var _surfwid = 1 << _npower, _surfhei = (1 << _npower) + 10;
-var _cols = _surfhei div 130;
-var _rows = (_surfwid - 10) div 130;
+// Calculate desired lightmap texture dimensions from number of lightmaps
+var _npowerw = 9, _npowerh = 9; // nth power of 2 for texture atlas' dimension, 2^9 = 512; 512x512 lightmap size for default.
+var _lightmapoffsety = 10; // 10px lightmap offset for considering default, No-lightmap texture
+var _lightmapmargin = 4; // Space between lightmaps, in pixel
+var _lightmapunit = 128 + _lightmapmargin * 2; // size of each lightmaps
 
+var _surfwid = 1 << _npowerw, _surfhei = 1 << _npowerh; // width / height of lightmap texture atlas
+var _cols = _surfwid div _lightmapunit; // maximum columns of lightmaps we can fit in
+var _rows = (_surfhei - _lightmapoffsety) div _lightmapunit; // maximum rows of lightmaps we can fit in
+
+// Expand the lightmap texture until we can fit all the lightmaps
+var _surfacegrowflip = 1;
 while (_cols * _rows < bspdata[? "lightmaps-num"])
 {
-    _npower++;
-    _surfwid = 1 << _npower;
-    _surfhei = (1 << _npower) + 10;
-    _cols = _surfhei div 130;
-    _rows = (_surfwid - 10) div 130;
+    if (_surfacegrowflip)
+    {
+        _npowerw++;
+        _surfwid = 1 << _npowerw;
+        _cols = _surfwid div _lightmapunit;
+    }
+    else
+    {
+        _npowerh++;
+        _surfhei = 1 << _npowerh;
+        _rows = (_surfhei - _lightmapoffsety) div _lightmapunit;
+    }
+    
+    _surfacegrowflip *= -1;
 }
 
-bspdata[? "res-lightatlas"] = surface_create(_surfwid, _surfhei);
-surface_set_target(bspdata[? "res-lightatlas"]);
-draw_clear(c_white);
+// Calculate inverse surface sizes (for calculating texture uvs)
+var _invsurfwid = 1 / _surfwid, _invsurfhei = 1 / _surfhei;
+
+// Build lightmap
+var _lmapsurf = surface_create(_surfwid, _surfhei);
+
+surface_set_target(_lmapsurf);
+draw_clear(c_black);
+
+// Draw default / no lightmap texture
+draw_sprite(sprNotexture, 0, 0, 0);
+
+// Draw the lightmaps
 for (var i=0; i<bspdata[? "lightmaps-num"]; i++)
 {
-    var _wx = (i % _cols) * 130;
-    var _wy = (i div _cols) * 130 + 10;
-    draw_sprite(_lmspr[| i], 0, _wx, _wy);
+    var _spr = _lmspr[| i];
+    ds_list_add(bspdata[? "lightmaps-list"], sprite_get_texture(_spr, 0));
     
-    _lightinfos[# 1, i] = _wx / _surfwid;
-    _lightinfos[# 2, i] = 1 - (_wy / _surfhei);
-    _lightinfos[# 3, i] = (_wx + 128) / _surfwid;
-    _lightinfos[# 4, i] = 1 - ((_wy + 128) / _surfhei);
+    // draw lightmap in appropirate positions
+    var _wx = (i % _cols) * _lightmapunit;
+    var _wy = (i div _cols) * _lightmapunit + _lightmapoffsety;
+    
+    for (var o = -_lightmapmargin; o <= _lightmapmargin; o++)
+    {
+        draw_sprite(_spr, 0, _wx + o, _wy);
+        draw_sprite(_spr, 0, _wx, _wy + o);
+        draw_sprite(_spr, 0, _wx + o, _wy + o);
+    }
+    
+    draw_sprite(_spr, 0, _wx, _wy);
+    
+    // calculate lightmap uvs
+    _lightinfos[# eBSP_LIGHTMAP.UV_MIN_X, i] = (_wx - 1) * _invsurfwid;
+    _lightinfos[# eBSP_LIGHTMAP.UV_MIN_Y, i] = (_wy - 1) * _invsurfhei;
+    _lightinfos[# eBSP_LIGHTMAP.UV_MAX_X, i] = (_wx + 128 - 1) * _invsurfwid;
+    _lightinfos[# eBSP_LIGHTMAP.UV_MAX_Y, i] = (_wy + 128 - 1) * _invsurfhei;
 }
+
 surface_reset_target();
 
-// (DEBUG) Build wireframe vertex buffer of leaf bounding box
-show_debug_message("Building Wireframe VB..");
-vertex_format_begin();
-vertex_format_add_position_3d();
-vertex_format_add_color();
-zbspDebugVF = vertex_format_end();
-zbspDebugBboxVB = vertex_create_buffer();
+bspdata[? "res-lightatlas-surf"] = _lmapsurf;
+bspdata[? "res-lightatlas-spr"] = sprite_create_from_surface(_lmapsurf, 0, 0, _surfwid, _surfhei, false, false, 0, 0);
+bspdata[? "res-lightatlas-tex"] = sprite_get_texture(bspdata[? "res-lightatlas-spr"], 0);
 
-vertex_begin(zbspDebugBboxVB, zbspDebugVF);
-var _models = bspdata[? "models-data"];
-var _leafs = bspdata[? "leafs-data"];
-var _nodes = bspdata[? "nodes-data"];
-for (var i=0; i<bspdata[? "models-num"]; i++)
+// ==================================================================
+/// Build debug vertex buffer / meshses
+// ==================================================================
+if (builddebugmesh)
 {
-    var _minx = _models[# 0, i], _miny = _models[# 1, i], _minz = _models[# 2, i];
-    var _maxx = _models[# 3, i], _maxy = _models[# 4, i], _maxz = _models[# 5, i];
+    var _models = bspdata[? "models-data"];
+    var _leafs = bspdata[? "leafs-data"];
+    var _nodes = bspdata[? "nodes-data"];
     
-    // side 1
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    // Prepare vertex format
+    vertex_format_begin();
+    vertex_format_add_position_3d();
+    vertex_format_add_color();
+    var _debugVF = vertex_format_end();
+    var _debugVB;
     
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
     
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    /// Build lightvol visualization vertex buffer
+    // http://www.mralligator.com/q3/#Lightvols
+    zbsp_append_log(bspdata, "Building Lightvol VB..");
+    show_debug_message("Building Lightvol VB..");
+    _debugVB = vertex_create_buffer();
     
-    // side 2
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    // list containing lightvolume
+    var _lightvols = bspdata[? "lightvols-data"];
     
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    var _lightvolcellsizeh = 64; // cell size of lightvol grid in x-y axis (constant)
+    var _lightvolcellsizev = 128; // cell size of lightvol grid in z axis (constant)
+    var _lightvolnx = floor(_models[# eBSP_MODEL.BBOX_MAX_X, 0] / _lightvolcellsizeh) - ceil(_models[# eBSP_MODEL.BBOX_MIN_X, 0] / _lightvolcellsizeh) + 1;
+    var _lightvolny = floor(_models[# eBSP_MODEL.BBOX_MAX_Y, 0] / _lightvolcellsizeh) - ceil(_models[# eBSP_MODEL.BBOX_MIN_Y, 0] / _lightvolcellsizeh) + 1;
+    var _lightvolnz = floor(_models[# eBSP_MODEL.BBOX_MAX_Z, 0] / _lightvolcellsizev) - ceil(_models[# eBSP_MODEL.BBOX_MIN_Z, 0] / _lightvolcellsizev) + 1;
     
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    zbsp_append_log(bspdata, "Lightvol entries number calculated : " + string(_lightvolnx * _lightvolny * _lightvolnz));
+    zbsp_append_log(bspdata, "Lightvol actual entries according to DIRENTRY : " + string(bspdata[? "lightvols-num"]));
+    show_debug_message("Lightvol entries number calculated : " + string(_lightvolnx * _lightvolny * _lightvolnz));
+    show_debug_message("Lightvol actual entries according to DIRENTRY : " + string(bspdata[? "lightvols-num"]));
     
-    // side 3
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
+    vertex_begin(_debugVB, _debugVF);
     
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    // side 4
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-}
-
-for (var i=0; i<bspdata[? "nodes-num"]; i++)
-{
-    var _minx = _nodes[# 3, i], _miny = _nodes[# 4, i], _minz = _nodes[# 5, i];
-    var _maxx = _nodes[# 6, i], _maxy = _nodes[# 7, i], _maxz = _nodes[# 8, i];
-    
-    // side 1
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    // side 2
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    // side 3
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    // side 4
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-}
-
-for (var i=0; i<bspdata[? "leafs-num"]; i++)
-{
-    var _minx = _leafs[# 2, i], _miny = _leafs[# 3, i], _minz = _leafs[# 4, i];
-    var _maxx = _leafs[# 5, i], _maxy = _leafs[# 6, i], _maxz = _leafs[# 7, i];
-    
-    // side 1
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    // side 2
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    // side 3
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _minx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _maxz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    // side 4
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _miny, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    
-    vertex_position_3d(zbspDebugBboxVB, _maxx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-    vertex_position_3d(zbspDebugBboxVB, _minx, _maxy, _minz); vertex_colour(zbspDebugBboxVB, c_lime, 1);
-}
-vertex_end(zbspDebugBboxVB);
-vertex_freeze(zbspDebugBboxVB);
-
-// (DEBUG) Build vertex buffer of faces
-show_debug_message("Building Faces VB..");
-vertex_format_begin();
-vertex_format_add_position_3d();
-vertex_format_add_colour();
-vertex_format_add_textcoord();
-vertex_format_add_textcoord();
-zbspLevelVF = vertex_format_end();
-zbspDebugMeshVB = vertex_create_buffer();
-
-//vertex_begin(zbspDebugMeshVB, zbspDebugVF2);
-var _faces = bspdata[? "faces-data"];
-var _vertices = bspdata[? "vertices-data"];
-var _meshverts = bspdata[? "meshverts-data"];
-var _lmapinfo = bspdata[? "lightmaps-data"];
-var _texindexer = bspdata[? "textures-indexer"];
-
-bspdata[? "faces-buffers"] = ds_list_create();
-for (var i=0; i<bspdata[? "faces-num"]; i++)
-{
-    var _type = _faces[# 2, i];
-            var _buff = vertex_create_buffer();
-            vertex_begin(_buff, zbspDebugVF2);
-    
-    switch (_type)
+    var _boxsz = 8; // size of each cube
+    for (var _x=0; _x<_lightvolnx; _x++)
     {
-        case 3: // Mesh
-        case 1: // Polygon (Thankfully they already triangulated the polygons)
-            // fetch meshverts idx and number
-            var _meshvertidx = _faces[# 5, i], _meshvertnum = _faces[# 6, i];
-            
-            // fetch first vertex idx
-            var _vertidx = _faces[# 3, i];
-            
-            // fetch texture index
-            var _texidx = image_group_find_image(_ig, _texindexer[| _faces[# 0, i]]);
-            var _texuv = image_get_uvs(_texidx, 0);
-            
-            // fetch lightmap index
-            var _lmapidx = _faces[# 7, i];
-            
-            if (_lmapidx >= 0)
-            {
-                var _lmapminu = _lmapinfo[# 1, _lmapidx];
-                var _lmapminv = _lmapinfo[# 2, _lmapidx];
-                var _lmapmaxu = _lmapinfo[# 3, _lmapidx];
-                var _lmapmaxv = _lmapinfo[# 4, _lmapidx];
-            }
-            else
-            {
-                var _lmapminu = 0.0;
-                var _lmapminv = 0.0;
-                var _lmapmaxu = 0.0;
-                var _lmapmaxv = 0.0;
-            }
-            
-            for (var j=0; j<_meshvertnum; j++)
-            {
-                // calculate current vertex index from meshvert offset & first vertex index
-                if (_meshvertidx + j > bspdata[? "meshverts-num"])
-                {
-                    show_debug_message("MESHVERTS INDEX OUT OF BOUNDS : " + string(_meshvertidx + j) + " / " + string(bspdata[? "meshverts-num"]));
-                    show_debug_message("MESHVERT IDX  : " + string(_meshvertidx) + " / NUM " + string(_meshvertnum));
-                    show_debug_message("TEXIDX : " + string(_faces[# 0, i]));
-                    zbsp_free_map(bspdata);
-                    game_end();
-                    break;
-                }
-                var _cvertex = _vertidx + _meshverts[| _meshvertidx + j];
-                
-                // append vertex data to buffer
-                vertex_position_3d(_buff, _vertices[# 0, _cvertex], _vertices[# 1, _cvertex], _vertices[# 2, _cvertex]);
-                vertex_colour(_buff, _vertices[# 10, _cvertex], _vertices[# 11, _cvertex]);
-                //vertex_texcoord(zbspDebugMeshVB, lerp(_texuv[0], _texuv[2], _vertices[# 3, _cvertex]), lerp(_texuv[3], _texuv[1], _vertices[# 4, _cvertex]));
-                vertex_texcoord(_buff, _vertices[# 3, _cvertex], _vertices[# 4, _cvertex]);
-                vertex_texcoord(_buff, lerp(_texuv[0], _texuv[2], _vertices[# 5, _cvertex]), lerp(_texuv[3], _texuv[1], _vertices[# 6, _cvertex]));
-                vertex_normal(_buff, _vertices[# 7, _cvertex], _vertices[# 8, _cvertex], _vertices[# 9, _cvertex]);
-            }
-            
-            break;
-            
-        case 2: // Bezier patch (Draw control points for now)
-            
-            break;
-    }
-            vertex_end(_buff);
-            // vertex_freeze(_buff);
-            ds_list_add(bspdata[? "faces-buffers"], _buff);
-}
-
-// vertex_end(zbspDebugMeshVB);
-// vertex_freeze(zbspDebugMeshVB);
-
-// (DEBUG) Build lightvol visualizations
-// http://www.mralligator.com/q3/#Lightvols
-show_debug_message("Building Lightvol VB..");
-zbspDebugLightvolVB = vertex_create_buffer();
-
-var _lightvols = bspdata[? "lightvols-data"];
-var _lightvolcellsizeh = 64;
-var _lightvolcellsizev = 128;
-var _lightvolnx = floor(_models[# 3, 0] / 64) - ceil(_models[# 0, 0] / 64) + 1;
-var _lightvolny = floor(_models[# 4, 0] / 64) - ceil(_models[# 1, 0] / 64) + 1;
-var _lightvolnz = floor(_models[# 5, 0] / 128) - ceil(_models[# 2, 0] / 128) + 1;
-
-show_debug_message("Lightvol size calculated : " + string(_lightvolnx * _lightvolny * _lightvolnz));
-show_debug_message("Lightvol actual size : " + string(bspdata[? "lightvols-num"]));
-
-vertex_begin(zbspDebugLightvolVB, zbspDebugVF);
-var _boxsz = 8;
-for (var _x=0; _x<_lightvolnx; _x++)
-{
-    for (var _y=0; _y<_lightvolny; _y++)
-    {
-        for (var _z=0; _z<_lightvolnz; _z++)
+        for (var _y=0; _y<_lightvolny; _y++)
         {
-            var _lvolidx = _z * (_lightvolnx * _lightvolny) + _y * (_lightvolnx) + _x;
-            var _wpx = _models[# 0, 0] + _x * _lightvolcellsizeh, _wpy = -_models[# 1, 0] - _y * _lightvolcellsizeh, _wpz = _models[# 2, 0] + _z * _lightvolcellsizev;
-            
-            zbsp_vb_lightmapcube(zbspDebugLightvolVB, _wpx, _wpy, _wpz, _boxsz, _lightvols[# 0, _lvolidx], _lightvols[# 1, _lvolidx], _lightvols[# 2, _lvolidx], _lightvols[# 3, _lvolidx]);
+            for (var _z=0; _z<_lightvolnz; _z++)
+            {
+                // 3d array index for accessing lightvol from list
+                var _lvolidx = _z * (_lightvolnx * _lightvolny) + _y * (_lightvolnx) + _x;
+                
+                // world-space position of lightvol cube
+                var _wpx = _models[# eBSP_MODEL.BBOX_MIN_X, 0] + _x * _lightvolcellsizeh, _wpy = -_models[# eBSP_MODEL.BBOX_MIN_Y, 0] - _y * _lightvolcellsizeh, _wpz = _models[# eBSP_MODEL.BBOX_MIN_Z, 0] + _z * _lightvolcellsizev;
+                
+                zbsp_vb_lightmapcube(_debugVB, _wpx, _wpy, _wpz, _boxsz, _lightvols[# eBSP_LIGHTVOL.AMBIENT, _lvolidx], _lightvols[# eBSP_LIGHTVOL.DIRECTION, _lvolidx], _lightvols[# eBSP_LIGHTVOL.PHI, _lvolidx], _lightvols[# eBSP_LIGHTVOL.THETA, _lvolidx]);
+            }
         }
     }
+    
+    vertex_end(_debugVB);
+    if (vertex_get_buffer_size(_debugVB) > 0)
+    {
+        vertex_freeze(_debugVB);
+    }
+    
+    // put the vertex buffer into the map
+    bspdata[? "vb-debug-lightvol"] = _debugVB;
+    
+    
+    /// Build leaf bounding box visualization vertex buffer
+    zbsp_append_log(bspdata, "Building BoundingBox VB..");
+    show_debug_message("Building BoundingBox VB..");
+    _debugVB = vertex_create_buffer();
+    
+    vertex_begin(_debugVB, _debugVF);
+    
+    // append models bbox data
+    for (var i=0; i<bspdata[? "models-num"]; i++)
+    {
+        var _minx = _models[# eBSP_MODEL.BBOX_MIN_X, i], _miny = _models[# eBSP_MODEL.BBOX_MIN_Y, i], _minz = _models[# eBSP_MODEL.BBOX_MIN_Z, i];
+        var _maxx = _models[# eBSP_MODEL.BBOX_MAX_X, i], _maxy = _models[# eBSP_MODEL.BBOX_MAX_Y, i], _maxz = _models[# eBSP_MODEL.BBOX_MAX_Z, i];
+        
+        zbsp_vb_wirecube(_debugVB, _minx, _miny, _minz, _maxx, _maxy, _maxz, c_lime, true);
+    }
+    
+    // append nodes bbox data
+    for (var i=0; i<bspdata[? "nodes-num"]; i++)
+    {
+        var _minx = _nodes[# eBSP_NODE.BBOX_MIN_X, i], _miny = _nodes[# eBSP_NODE.BBOX_MIN_Y, i], _minz = _nodes[# eBSP_NODE.BBOX_MIN_Z, i];
+        var _maxx = _nodes[# eBSP_NODE.BBOX_MAX_X, i], _maxy = _nodes[# eBSP_NODE.BBOX_MAX_Y, i], _maxz = _nodes[# eBSP_NODE.BBOX_MAX_Z, i];
+        
+        zbsp_vb_wirecube(_debugVB, _minx, _miny, _minz, _maxx, _maxy, _maxz, c_lime, false);
+    }
+    
+    // append leafs bbox data
+    for (var i=0; i<bspdata[? "leafs-num"]; i++)
+    {
+        var _minx = _leafs[# eBSP_LEAF.BBOX_MIN_X, i], _miny = _leafs[# eBSP_LEAF.BBOX_MIN_Y, i], _minz = _leafs[# eBSP_LEAF.BBOX_MIN_Z, i];
+        var _maxx = _leafs[# eBSP_LEAF.BBOX_MAX_X, i], _maxy = _leafs[# eBSP_LEAF.BBOX_MAX_Y, i], _maxz = _leafs[# eBSP_LEAF.BBOX_MAX_Z, i];
+        
+        zbsp_vb_wirecube(_debugVB, _minx, _miny, _minz, _maxx, _maxy, _maxz, c_lime, false);
+    }
+    
+    vertex_end(_debugVB);
+    if (vertex_get_buffer_size(_debugVB) > 0)
+    {
+        vertex_freeze(_debugVB);
+    }
+    
+    // put the vertex buffer into the map
+    bspdata[? "vb-debug-bbox"] = _debugVB;
+    bspdata[? "vb-debug-format"] = _debugVF;
+    //vertex_format_delete(_debugVF);
 }
 
-vertex_end(zbspDebugLightvolVB);
-vertex_freeze(zbspDebugLightvolVB);
+
+// ==================================================================
+/// Build vertex buffer / meshses
+// ==================================================================
+// lightmap or vertex colour? - 0 : lightmap, 1 : vertex colour
+var _lightmodel = 0;
+
+// lookup table for iterating & weaving a vertex patch
+var _patchidxlut = -1;
+
+// lightmap default uv
+var _lmapdefaultuv = 1 * _invsurfwid;
+if (buildlevelmesh)
+{
+    // Build vertex buffer of faces
+    zbsp_append_log(bspdata, "Building Faces VB..");
+    show_debug_message("Building Faces VB..");
+    
+    var _textureready = bspdata[? "has-asset"];
+    
+    // Prepare vertex format
+    if (_textureready)
+    {
+        vertex_format_begin();
+        vertex_format_add_position_3d();
+        vertex_format_add_colour();
+        vertex_format_add_textcoord();
+        vertex_format_add_custom(vertex_type_float2, vertex_usage_textcoord);
+        vertex_format_add_normal();
+        var _debugVF = vertex_format_end();
+    }
+    else
+    {
+        vertex_format_begin();
+        vertex_format_add_position_3d();
+        vertex_format_add_colour();
+        vertex_format_add_textcoord();
+        vertex_format_add_normal();
+        var _debugVF = vertex_format_end();
+        
+        show_debug_message("NO ASSETS");
+    }
+    
+    var _faces = bspdata[? "faces-data"];
+    var _vertices = bspdata[? "vertices-data"];
+    var _meshverts = bspdata[? "meshverts-data"];
+    var _lmapinfo = bspdata[? "lightmaps-data"];
+    
+    bspdata[? "faces-buffers"] = ds_list_create();
+    for (var i=0; i<bspdata[? "faces-num"]; i++)
+    {
+        // Fetch face type
+        var _type = _faces[# eBSP_FACE.TYPE, i];
+        
+        // Create a vertexbuffer for face
+        var _debugVB = vertex_create_buffer();
+        vertex_begin(_debugVB, _debugVF);
+        
+        // Fetch first meshverts idx and number
+        var _meshvertidx = _faces[# eBSP_FACE.MESHVERT_IDX, i], _meshvertnum = _faces[# eBSP_FACE.MESHVERT_NUM, i];
+        
+        // Fetch first vertex idx and number
+        var _vertidx = _faces[# eBSP_FACE.VERTEX_IDX, i], _vertnum = _faces[# eBSP_FACE.VERTEX_NUM, i];
+        
+        // Fetch texture index
+        var _texidx = _faces[# eBSP_FACE.TEXTURE, i];
+        if (_texidx < 0)
+        {
+            show_debug_message("FACE #" + string(i) + " TEX : " + string(_texidx));
+        }
+        
+        // Fetch lightmap index
+        var _lmapidx = _faces[# eBSP_FACE.LIGHTMAP, i];
+        var _lmapu, _lmapv, _lmapusz, _lmapvsz;
+        
+        if (_lmapidx < 0)
+        {
+            // Not using lightmap? use default notexture uv instead..
+            _lmapu = _lmapdefaultuv;
+            _lmapv = _lmapdefaultuv;
+            _lmapusz = _lmapdefaultuv;
+            _lmapvsz = _lmapdefaultuv;
+        }
+        else
+        {
+            // UV starting coords
+            _lmapu = _lmapinfo[# eBSP_LIGHTMAP.UV_MIN_X, _lmapidx];
+            _lmapv = _lmapinfo[# eBSP_LIGHTMAP.UV_MIN_Y, _lmapidx];
+            
+            // UV size
+            _lmapusz = _lmapinfo[# eBSP_LIGHTMAP.UV_MAX_X, _lmapidx] - _lmapu;
+            _lmapvsz = _lmapinfo[# eBSP_LIGHTMAP.UV_MAX_Y, _lmapidx] - _lmapv;
+        }
+        
+        // Default vertex colour when using lightmap
+        // (vertex colour is mostly only used for lighting)
+        var _vertexcol = c_white;
+        
+        /// Type dependant vertex building code
+        switch (_type)
+        {
+            case eBSP_FACE_TYPE.MESH: // Mesh
+            case eBSP_FACE_TYPE.POLYGON: // Polygon (Thankfully they've already triangulated the polygons)
+                if (_textureready)
+                {
+                    for (var j=0; j<_meshvertnum; j++)
+                    {
+                        // Calculate current vertex index from meshvert offset & first vertex index
+                        var _cvertex = _vertidx + _meshverts[| _meshvertidx + j];
+                        
+                        // Append vertex to buffer
+                        vertex_position_3d(_debugVB, _vertices[# eBSP_VERTEX.X, _cvertex], _vertices[# eBSP_VERTEX.Y, _cvertex], _vertices[# eBSP_VERTEX.Z, _cvertex]);
+                        
+                        if (_lightmodel == 0)
+                        {
+                            vertex_colour(_debugVB, _vertexcol, 1);
+                        }
+                        else
+                        {
+                            vertex_colour(_debugVB, _vertices[# eBSP_VERTEX.COLOUR, _cvertex], _vertices[# eBSP_VERTEX.ALPHA, _cvertex]);
+                        }
+                        
+                        vertex_texcoord(_debugVB, _vertices[# eBSP_VERTEX.TEX_U, _cvertex], _vertices[# eBSP_VERTEX.TEX_V, _cvertex]);
+                        
+                        vertex_float2(_debugVB, _lmapu + _lmapusz * _vertices[# eBSP_VERTEX.LMAP_U, _cvertex], _lmapv + _lmapvsz * _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]);
+                        //vertex_float2(_debugVB, lerp(_lmapu, _lmapusz, _vertices[# eBSP_VERTEX.LMAP_U, _cvertex]), lerp(_lmapv, _lmapvsz, _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]));
+                        
+                        vertex_normal(_debugVB, _vertices[# eBSP_VERTEX.NORMAL_X, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Y, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Z, _cvertex]);
+                    }
+                }
+                else
+                {
+                    for (var j=0; j<_meshvertnum; j++)
+                    {
+                        // Calculate current vertex index from meshvert offset & first vertex index
+                        var _cvertex = _vertidx + _meshverts[| _meshvertidx + j];
+                        
+                        // Append vertex to buffer
+                        vertex_position_3d(_debugVB, _vertices[# eBSP_VERTEX.X, _cvertex], _vertices[# eBSP_VERTEX.Y, _cvertex], _vertices[# eBSP_VERTEX.Z, _cvertex]);
+                        
+                        if (_lightmodel == 0)
+                        {
+                            vertex_colour(_debugVB, _vertexcol, 1);
+                        }
+                        else
+                        {
+                            vertex_colour(_debugVB, _vertices[# eBSP_VERTEX.COLOUR, _cvertex], _vertices[# eBSP_VERTEX.ALPHA, _cvertex]);
+                        }
+                        
+                        vertex_texcoord(_debugVB, _lmapu + _lmapusz * _vertices[# eBSP_VERTEX.LMAP_U, _cvertex], _lmapv + _lmapvsz * _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]);
+                        //vertex_texcoord(_debugVB, _lmapu + _lmapusz * _vertices[# eBSP_VERTEX.LMAP_U, _cvertex], _lmapv + _lmapvsz * _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]);
+        
+                        vertex_normal(_debugVB, _vertices[# eBSP_VERTEX.NORMAL_X, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Y, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Z, _cvertex]);
+                    }
+                }
+                break;
+                
+            case eBSP_FACE_TYPE.BEZIERPATCH: // Bezier patch (Draw control points for now)
+                // Fetch control points grid dimensions
+                var _bezierw = _faces[# eBSP_FACE.BEZIERPATCH_W, i], _bezierh = _faces[# eBSP_FACE.BEZIERPATCH_H, i];
+                // var _bezierto
+                
+                // (DEBUG) unset texture to default
+                // ds_list_set(bspdata[? "textures-list"], i, sprite_get_texture(sprNotexture, 0));
+                
+                // show_debug_message("PATCH #" + string(i) + " | " + string(_bezierw) + ", " + string(_bezierh) + " | " + string(_vertnum));
+                
+                _patchidxlut[0, 0] = 0; _patchidxlut[0, 1] = 0;
+                _patchidxlut[1, 0] = 0; _patchidxlut[1, 1] = 1;
+                _patchidxlut[2, 0] = 1; _patchidxlut[2, 1] = 0;
+                _patchidxlut[3, 0] = 1; _patchidxlut[3, 1] = 0;
+                _patchidxlut[4, 0] = 0; _patchidxlut[4, 1] = 1;
+                _patchidxlut[5, 0] = 1; _patchidxlut[5, 1] = 1;
+                
+                // Read control points
+                if (_textureready)
+                {
+                    for (var j=0; j<_bezierw - 1; j++)
+                    {
+                        for (var k=0; k<_bezierh - 1; k++)
+                        {
+                            // Get control points for patch
+                            for (var o=0; o<6; o++)
+                            {
+                                // Calculate current vertex index
+                                var _x = j + _patchidxlut[o, 0];
+                                var _y = k + _patchidxlut[o, 1];
+                                var _cvertex = _vertidx + (_x + _y * _bezierw);
+                                
+                                var _widlerp = _x / (_bezierw - 1);
+                                var _heilerp = _y / (_bezierh - 1);
+                                
+                                var _col = make_color_rgb(_widlerp * 255, _heilerp * 255, 128);
+                                
+                                if (_cvertex > _vertnum + _vertidx)
+                                {
+                                    _col = c_fuchsia;
+                                }
+                                
+                                vertex_position_3d(_debugVB, _vertices[# eBSP_VERTEX.X, _cvertex], _vertices[# eBSP_VERTEX.Y, _cvertex], _vertices[# eBSP_VERTEX.Z, _cvertex]);
+                                // vertex_colour(_debugVB, _vertices[# eBSP_VERTEX.COLOUR, _cvertex], _vertices[# eBSP_VERTEX.ALPHA, _cvertex]);
+                                vertex_colour(_debugVB, _col, 1);
+                                vertex_texcoord(_debugVB, _vertices[# eBSP_VERTEX.TEX_U, _cvertex], _vertices[# eBSP_VERTEX.TEX_V, _cvertex]);
+                                vertex_texcoord(_debugVB, _lmapu + _lmapusz * _vertices[# eBSP_VERTEX.LMAP_U, _cvertex], _lmapv + _lmapvsz * _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]);
+                                vertex_normal(_debugVB, _vertices[# eBSP_VERTEX.NORMAL_X, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Y, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Z, _cvertex]);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (var j=0; j<_bezierw - 1; j++)
+                    {
+                        for (var k=0; k<_bezierh - 1; k++)
+                        {
+                            // Get control points for patch
+                            for (var o=0; o<6; o++)
+                            {
+                                // Calculate current vertex index
+                                var _x = j + _patchidxlut[o, 0];
+                                var _y = k + _patchidxlut[o, 1];
+                                var _cvertex = _vertidx + (_x + _y * _bezierw);
+                                
+                                var _widlerp = _x / (_bezierw - 1);
+                                var _heilerp = _y / (_bezierh - 1);
+                                
+                                var _col = make_color_rgb(_widlerp * 255, _heilerp * 255, 128);
+                                
+                                if (_cvertex > _vertnum + _vertidx)
+                                {
+                                    _col = c_fuchsia;
+                                }
+                                
+                                vertex_position_3d(_debugVB, _vertices[# eBSP_VERTEX.X, _cvertex], _vertices[# eBSP_VERTEX.Y, _cvertex], _vertices[# eBSP_VERTEX.Z, _cvertex]);
+                                // vertex_colour(_debugVB, _vertices[# eBSP_VERTEX.COLOUR, _cvertex], _vertices[# eBSP_VERTEX.ALPHA, _cvertex]);
+                                vertex_colour(_debugVB, _col, 1);
+                                vertex_texcoord(_debugVB, _lmapu + _lmapusz * _vertices[# eBSP_VERTEX.LMAP_U, _cvertex], _lmapv + _lmapvsz * _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]);
+                                vertex_normal(_debugVB, _vertices[# eBSP_VERTEX.NORMAL_X, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Y, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Z, _cvertex]);
+                            }
+                        }
+                    }
+                }
+                break;
+        }
+        
+        // Tidy up stuff & into the buffer list it goes
+        vertex_end(_debugVB);
+        if (vertex_get_buffer_size(_debugVB) > 0)
+        {
+            vertex_freeze(_debugVB);
+        }
+        
+        ds_list_add(bspdata[? "faces-buffers"], _debugVB);
+    }
+    
+    bspdata[? "vb-format"] = _debugVF;
+    
+    // TIL deleting vertex format & rendering the vertex buffer with deleted format will crash the game
+    //vertex_format_delete(_debugVF);
+}
 
 // Free buffer from leaking the memory
 buffer_delete(_filebuffer);

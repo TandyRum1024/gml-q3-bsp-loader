@@ -16,18 +16,17 @@
     data[# 8-9, row] : Face's lightmap corner in lightmap (???)
     data[# 10-11, row] : Face's lightmap size in lightmap (???)
     data[# 12-14, row] : Lightmap worldspace origin
-    data[# 15-17, row] : Lightmap worldspace s unit vector
+    data[# 15-17, row] : Lightmap worldspace s unit vector (s/t vectors can be used with worldspace origin to get worldspace coordinates for lightmap baking)
     data[# 18-20, row] : Lightmap worldspace t unit vector
     data[# 21-23, row] : Face's surface normal
     data[# 24-25, row] : Bezier patch dimensions
 */
 
 var _off = argument1[? "faces-diroff"], _len = argument1[? "faces-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.FACES], _data;
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.FACES], _data;
 buffer_seek(argument0, buffer_seek_start, _off);
 
 _data = ds_grid_create(26, _num);
-show_debug_message("FACE GRID : " + string(_data));
 for (var i=0; i<_num; i++)
 {
     // texture idx

@@ -1,6 +1,6 @@
 ///zbsp_load_lump_brushsides(buffer, map)
 /*
-    Loads brushes lump data from given buffer into the given map
+    Loads brushsides lump data from given buffer into the given map
     ==========================================================
     The data can be accessed from the given map with the key "brushsides-data", Which referes to a ds_grid,
     with height same as the value from the map's "brushsides-num" value.
@@ -10,7 +10,7 @@
 */
 
 var _off = argument1[? "brushsides-diroff"], _len = argument1[? "brushsides-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.BRUSHSIDES], _data;
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.BRUSHSIDES], _data;
 buffer_seek(argument0, buffer_seek_start, _off);
 
 _data = ds_grid_create(2, _num);

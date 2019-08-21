@@ -3,7 +3,7 @@
     Tries to return the path to asset with given relative asset path.
 */
 
-var _mapdir = argument0[? "res-dir"] + "\" + argument1;
+var _mapdir = argument0[? "meta-res-dir"] + "\" + argument1;
 var _basedir = "bspdata\res\" + argument1;
 
 if (file_exists(_mapdir))

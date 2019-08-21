@@ -10,14 +10,15 @@
     data[# 5-6, row] : Vertex lightmap uvs
     data[# 7-9, row] : Vertex normal
     data[# 10-11, row] : Vertex colour (as 0xBBGGRR format) and alpha (in 0..1 range)
+    
+    The vertex colour is mainly used for alternative lighting model aside the lightmap... If you're using lightmap, Then vertex colour 
 */
 
 var _off = argument1[? "vertices-diroff"], _len = argument1[? "vertices-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.VERTICES], _data;
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.VERTICES], _data;
 buffer_seek(argument0, buffer_seek_start, _off);
 
 _data = ds_grid_create(12, _num);
-show_debug_message("VERTS GRID : " + string(_data));
 for (var i=0; i<_num; i++)
 {
     // vertex xyz pos (swizzled)
@@ -30,11 +31,11 @@ for (var i=0; i<_num; i++)
     
     // texture uv
     _data[# 3, i] = buffer_read(argument0, buffer_f32);
-    _data[# 4, i] = 1 - buffer_read(argument0, buffer_f32);
+    _data[# 4, i] = buffer_read(argument0, buffer_f32);
     
     // lightmap uv
-    _data[# 5, i] = buffer_read(argument0, buffer_f32);
-    _data[# 6, i] = 1 - buffer_read(argument0, buffer_f32);
+    _data[# 5, i] = clamp(buffer_read(argument0, buffer_f32), 0, 1);
+    _data[# 6, i] = clamp(buffer_read(argument0, buffer_f32), 0, 1);
     
     // normal
     _data[# 7, i] = buffer_read(argument0, buffer_f32);

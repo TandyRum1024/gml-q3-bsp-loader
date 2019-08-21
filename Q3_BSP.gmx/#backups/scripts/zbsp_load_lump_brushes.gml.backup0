@@ -1,4 +1,4 @@
-// 2019-08-19 19:54:03
+// 2019-08-21 22:05:53
 ///zbsp_load_lump_brushes(buffer, map)
 /*
     Loads brushes lump data from given buffer into the given map
@@ -12,7 +12,7 @@
 */
 
 var _off = argument1[? "brushes-diroff"], _len = argument1[? "brushes-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.BRUSHES], _data;
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.BRUSHES], _data;
 buffer_seek(argument0, buffer_seek_start, _off);
 
 _data = ds_grid_create(3, _num);

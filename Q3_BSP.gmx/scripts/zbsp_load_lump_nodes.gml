@@ -12,7 +12,7 @@
 */
 
 var _off = argument1[? "nodes-diroff"], _len = argument1[? "nodes-dirlen"];
-var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.NODES], _data;
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.NODES], _data;
 buffer_seek(argument0, buffer_seek_start, _off);
 
 _data = ds_grid_create(9, _num);
