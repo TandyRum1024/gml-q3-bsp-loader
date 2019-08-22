@@ -9,6 +9,8 @@ var Y = GUID.y;
 var W = GUID.W;
 var H = GUID.H;
 
+draw_set_font(fntMain16);
+
 /* DRAW BASE PANEL */
 if (STYLE == 0) //CYKABLYAT
 {
