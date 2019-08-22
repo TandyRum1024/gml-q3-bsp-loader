@@ -1,0 +1,55 @@
+///zbsp_load_lump_models(buffer, map)
+/*
+    Loads models lump data from given buffer into the given map
+    ==========================================================
+    The data can be accessed from the given map with the key "models-data", Which referes to a ds_grid,
+    with height same as the value from the map's "models-num" value.
+    Each row contains a data for each model, With following indices:
+    data[# 0-2, row] : Bounding box's minimum xyz position
+    data[# 3-5, row] : Bounding box's maximum xyz position
+    data[# 6, row] : Model's first face index
+    data[# 7, row] : Model's number of faces using
+    data[# 8, row] : Model's first brush index
+    data[# 9, row] : Model's number of brushes using
+*/
+
+var _off = argument1[? "models-diroff"], _len = argument1[? "models-dirlen"];
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.MODELS], _data;
+buffer_seek(argument0, buffer_seek_start, _off);
+
+_data = ds_grid_create(10, _num);
+for (var i=0; i<_num; i++)
+{
+    // bbox min coords
+    var _x = buffer_read(argument0, buffer_f32);
+    var _y = buffer_read(argument0, buffer_f32);
+    var _z = buffer_read(argument0, buffer_f32);
+    
+    _data[# 0, i] = _x;
+    _data[# 1, i] = _y;
+    _data[# 2, i] = _z;
+    
+    // bbox max coords
+    _x = buffer_read(argument0, buffer_f32);
+    _y = buffer_read(argument0, buffer_f32);
+    _z = buffer_read(argument0, buffer_f32);
+
+    _data[# 3, i] = _x;
+    _data[# 4, i] = _y;
+    _data[# 5, i] = _z;
+    
+    // first face index
+    _data[# 6, i] = buffer_read(argument0, buffer_s32);
+    
+    // number of faces
+    _data[# 7, i] = buffer_read(argument0, buffer_s32);
+    
+    // first brush index
+    _data[# 8, i] = buffer_read(argument0, buffer_s32);
+    
+    // number of brushes
+    _data[# 9, i] = buffer_read(argument0, buffer_s32);
+}
+
+argument1[? "models-num"] = _num;
+argument1[? "models-data"] = _data;

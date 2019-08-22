@@ -1,0 +1,53 @@
+///zbsp_load_lump_vertices(buffer, map)
+/*
+    Loads vertices lump data from given buffer into the given map
+    ==========================================================
+    The data can be accessed from the given map with the key "vertices-data", Which referes to a ds_grid,
+    with height same as the value from the map's "vertices-num" value.
+    Each row contains a data for each vertex, With following indices:
+    data[# 0-2, row] : Vertex xyz position
+    data[# 3-4, row] : Vertex surface (aka texture) uvs
+    data[# 5-6, row] : Vertex lightmap uvs
+    data[# 7-9, row] : Vertex normal
+    data[# 10-11, row] : Vertex colour (as 0xBBGGRR format) and alpha (in 0..1 range)
+    
+    The vertex colour is mainly used for alternative lighting model aside the lightmap... If you're using lightmap, Then vertex colour 
+*/
+
+var _off = argument1[? "vertices-diroff"], _len = argument1[? "vertices-dirlen"];
+var _num = _len / global.BSPLumpSizes[@ eBSP_LUMP.VERTICES], _data;
+buffer_seek(argument0, buffer_seek_start, _off);
+
+_data = ds_grid_create(12, _num);
+for (var i=0; i<_num; i++)
+{
+    // vertex xyz pos (swizzled)
+    var _x = buffer_read(argument0, buffer_f32);
+    var _y = buffer_read(argument0, buffer_f32);
+    var _z = buffer_read(argument0, buffer_f32);
+    _data[# 0, i] = _x;
+    _data[# 1, i] = -_y;
+    _data[# 2, i] = _z;
+    
+    // texture uv
+    _data[# 3, i] = buffer_read(argument0, buffer_f32);
+    _data[# 4, i] = buffer_read(argument0, buffer_f32);
+    
+    // lightmap uv
+    _data[# 5, i] = clamp(buffer_read(argument0, buffer_f32), 0, 1);
+    _data[# 6, i] = clamp(buffer_read(argument0, buffer_f32), 0, 1);
+    
+    // normal
+    _data[# 7, i] = buffer_read(argument0, buffer_f32);
+    _data[# 8, i] = buffer_read(argument0, buffer_f32);
+    _data[# 9, i] = buffer_read(argument0, buffer_f32);
+    
+    // vertex colour (bgr)
+    _data[# 10, i] = (buffer_read(argument0, buffer_u8)) | (buffer_read(argument0, buffer_u8) << 8) | (buffer_read(argument0, buffer_u8) << 16);
+    
+    // vertex alpha
+    _data[# 11, i] = buffer_read(argument0, buffer_u8) / 255;
+}
+
+argument1[? "vertices-num"] = _num;
+argument1[? "vertices-data"] = _data;

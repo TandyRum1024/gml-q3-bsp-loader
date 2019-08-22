@@ -1,0 +1,29 @@
+// 2019-08-22 05:42:53
+///zbsp_load_lump_visdata(buffer, map)
+/*
+    Loads PVS data from given buffer into the given map
+    ==========================================================
+    The data can be accessed from the given map with the following set of keys :
+    data[? "visdata-num"] : number of "vectors", total number of PVS-clusters
+    data[? "visdata-size"] : size of each "vectors", how many list entries each PVS-clusters use to store its data
+    data[? "visdata"] : buffer of 8-bit visibility data, with length equal as ("visdata-num" * "visdata-size")
+*/
+var _off = argument1[? "visdata-diroff"], _len = argument1[? "visdata-dirlen"];
+buffer_seek(argument0, buffer_seek_start, _off);
+
+var _vecnum = buffer_read(argument0, buffer_s32);
+var _vecsize = buffer_read(argument0, buffer_s32);
+var _veclen = _vecsize * _vecnum;
+var _vec = buffer_create(_veclen, buffer_fast, 1);//ds_list_create();
+
+buffer_copy(argument0, _off + 8, _veclen, _vec, 0);
+/*
+for (var i=0; i<_veclen; i++)
+{
+    ds_list_add(_vec, buffer_read(argument0, buffer_u8));
+}
+*/
+
+argument1[? "visdata"] = _vec;
+argument1[? "visdata-num"] = _vecnum;
+argument1[? "visdata-size"] = _vecsize;

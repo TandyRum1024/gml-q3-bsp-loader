@@ -1,0 +1,49 @@
+// 2019-08-19 17:58:50
+///zbsp_load_lump_nodes(buffer, map)
+/*
+    Loads nodes lump data from given buffer into the given map
+    ==========================================================
+    The data can be accessed from the given map with the key "nodes-data", Which referes to a ds_grid,
+    with height same as the value from the map's "nodes-num" value.
+    Each row contains a data for each node, With following indices:
+    data[# 0, row] : Plane index
+    data[# 1-2, row] : Child node's indices
+    data[# 3-5, row] : Bounding box's minimum xyz position
+    data[# 6-8, row] : Bounding box's maximum xyz position
+*/
+
+var _off = argument1[? "nodes-diroff"], _len = argument1[? "nodes-dirlen"];
+var _num = _len / global.BSPLumpSizes[@ eBSPLUMP.NODES], _data;
+buffer_seek(argument0, buffer_seek_start, _off);
+
+_data = ds_grid_create(9, _num);
+for (var i=0; i<_num; i++)
+{
+    // plane index
+    _data[# 0, i] = buffer_read(argument0, buffer_s32);
+    
+    // children index (negative index = leaf indices that can be indexed with following : -(leaf + 1))
+    _data[# 1, i] = buffer_read(argument0, buffer_s32);
+    _data[# 2, i] = buffer_read(argument0, buffer_s32);
+    
+    // bbox min coords
+    var _x = buffer_read(argument0, buffer_s32);
+    var _y = buffer_read(argument0, buffer_s32);
+    var _z = buffer_read(argument0, buffer_s32);
+    
+    _data[# 3, i] = _x;
+    _data[# 4, i] = -_y;
+    _data[# 5, i] = _z;
+    
+    // bbox max coords
+    _x = buffer_read(argument0, buffer_s32);
+    _y = buffer_read(argument0, buffer_s32);
+    _z = buffer_read(argument0, buffer_s32);
+    
+    _data[# 6, i] = _x;
+    _data[# 7, i] = -_y;
+    _data[# 8, i] = _z;
+}
+
+argument1[? "nodes-num"] = _num;
+argument1[? "nodes-data"] = _data;

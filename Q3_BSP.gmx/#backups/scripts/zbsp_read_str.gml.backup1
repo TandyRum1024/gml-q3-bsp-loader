@@ -1,0 +1,15 @@
+// 2019-08-16 22:53:38
+///zbsp_read_str(buff, num)
+/*
+    Reads string with given length from buffer
+*/
+
+var _char = 0, _str = "";
+
+for (var i=0; i<argument1; i++)
+{
+    char = buffer_read(argument0, buffer_u8);
+    str += chr(char);
+}
+
+return str;
