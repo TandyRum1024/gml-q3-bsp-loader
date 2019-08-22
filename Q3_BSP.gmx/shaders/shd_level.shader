@@ -35,6 +35,6 @@ void main()
     vec4 testuv1 = vec4(v_vTexcoord1.x, v_vTexcoord1.y, 0.5, 1.0);
     vec4 testuv2 = vec4(v_vTexcoord2.x, v_vTexcoord2.y, 0.5, 1.0);
     
-    gl_FragColor = v_vColour * 2.0 * texture2D( gm_BaseTexture, v_vTexcoord1 ) * texture2D( uLightmap, v_vTexcoord2 );
+    gl_FragColor = v_vColour * texture2D( gm_BaseTexture, v_vTexcoord1 ) * texture2D( uLightmap, v_vTexcoord2 );
 }
 

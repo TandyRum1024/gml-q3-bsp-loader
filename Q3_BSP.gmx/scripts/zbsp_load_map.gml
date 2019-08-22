@@ -1,9 +1,14 @@
-///zbsp_load_map(filename, buildlevelmesh, builddebugmesh)
+///zbsp_load_map(filename, assetdir, buildlevelmesh, builddebugmesh)
 /*
     Loads Quake 3 map from zip/pk3 file, And returns ds_map containing the map information.
     =======================================================================================
     filename : direction to the Quake 3 map file. zip, pk3 and bsp files are supported.
     Feeding zip & pk3 files will make the script try to load the extra texture data & map metadata.
+  
+    assetdir : directory to the Quake 3's asset pk3 file. (pak00.pk3)
+    If the script can't find the file and didn't detects the base assets, The script will load & use default checkerboard texture instead of Quake 3's base texture when building the level mesh.
+    If there's already a 
+    Textures that was included with the map's pk3 / zip files will still be used regardless.
     
     buildlevelmesh : if set to true, the script will try to generate every face's mesh data into a vertex buffer.
     Then it can be used to render the levels with the vertex buffer.
@@ -23,8 +28,9 @@
 // ==================================================================
 /// define variables
 // ==================================================================
-buildlevelmesh = argument1;
-builddebugmesh = argument2;
+assetdirectory = argument1;
+buildlevelmesh = argument2;
+builddebugmesh = argument3;
 
 // helper variables that will help you (& me) to index the bsp map data structure
 zbsp_helper_vars();
@@ -37,11 +43,18 @@ var _filename = string_copy(filename_name(argument0), 1, string_pos(".", argumen
 // setup values
 bspdata[? "success"] = true;
 bspdata[? "error"] = "";
-bspdata[? "has-asset"] = true;
+bspdata[? "has-base-asset"] = true;
+bspdata[? "has-map-asset"] = true;
 bspdata[? "meta-filetype"] = _filetype;
 bspdata[? "meta-filename"] = _filename;
 bspdata[? "meta-map-name"] = _filename;
 bspdata[? "meta-debug-log"] = "ZBSP_LOAD_MAP() BEGIN... FILE : [" + string(argument0) + "]#===#";
+
+// relative directories
+var _datafolder = "bspdata";
+var _mapfolder = _datafolder + "\map\" + _filename;
+var _assetfolder = _datafolder + "\res";
+var _bspfile = "";
 
 if (!file_exists(argument0))
 {
@@ -54,23 +67,34 @@ if (!file_exists(argument0))
     return bspdata;
 }
 
+if ((assetdirectory == -1 || !file_exists(assetdirectory)) && !directory_exists(_assetfolder))
+{
+    // No assets file
+    zbsp_append_log(bspdata, "NO ASSET FILES FOUND");
+    bspdata[? "has-base-asset"] = false;
+}
+
 // ==================================================================
 /// unpack zip/pk3 file before processing
 // ==================================================================
-var _datafolder = "bspdata";
-var _mapfolder = _datafolder + "\map\" + _filename;
-var _assetfolder = _datafolder + "\res";
-var _bspfile = "";
 
 // add map resource direction to the map so we can access those later
 bspdata[? "meta-res-dir"] = _mapfolder;
 
-if (!directory_exists(_assetfolder))
+// Check & unpack base assets
+if (bspdata[? "has-base-asset"])
 {
-    zbsp_append_log(bspdata, "Unpacking base assets... this might take a while");
-    show_debug_message("Unpacking base assets... this might take a while");
-    
-    zip_unzip("hires_assets.pk3", _assetfolder);
+    if (!directory_exists(_assetfolder))
+    {
+        zbsp_append_log(bspdata, "Unpacking base assets... this might take a while");
+        show_debug_message("Unpacking base assets... this might take a while");
+        
+        // unzip & check if we successfully unzipped the base assets
+        if (!zip_unzip("hires_assets.pk3", _assetfolder))
+        {
+            bspdata[? "has-base-asset"] = false;
+        }
+    }
 }
 
 zbsp_append_log(bspdata, "Unpacking level...");
@@ -103,6 +127,8 @@ switch (_filetype)
         _result |= zip_unzip(_mapfolder + "\unzip\" + _filename + ".pk3", _mapfolder); // unzip pk3 contents (normally bsp file and textures, etc)
         _result |= file_exists(_mapfolder + "\maps\" + _filename + ".bsp");
         _bspfile = _mapfolder + "\maps\" + _filename + ".bsp";
+        
+        bspdata[? "has-map-asset"] = true;
         break;
 
     default:
@@ -110,14 +136,14 @@ switch (_filetype)
         _result |= zip_unzip(argument0, _mapfolder); // unzip pk3 contents (normally bsp file and textures, etc)
         _result |= file_exists(_mapfolder + "\maps\" + _filename + ".bsp");
         _bspfile = _mapfolder + "\maps\" + _filename + ".bsp";
+        
+        bspdata[? "has-map-asset"] = true;
         break;
         
     case "bsp":
         show_debug_message("BSP FILE");
         _result = 1;
         _bspfile = argument0;
-        
-        bspdata[? "has-asset"] = false;
         break;
 }
 if (_result == 0)
@@ -133,143 +159,146 @@ if (_result == 0)
 }
 
 // Read map related data
-// .arena metadata
-var _mapscriptdir = _mapfolder + "\scripts";
-if (directory_exists(_mapscriptdir))
+if (bspdata[? "has-map-asset"])
 {
-    var _arenadir = _mapscriptdir + "\" + _filename + ".arena";
-    
-    if (file_exists(_arenadir))
+    // read .arena metadata for various metadatas including actual map name
+    var _mapscriptdir = _mapfolder + "\scripts";
+    if (directory_exists(_mapscriptdir))
     {
-        show_debug_message("Reading map .arena file..");
+        var _arenadir = _mapscriptdir + "\" + _filename + ".arena";
         
-        var _arenafile = file_text_open_read(_arenadir);
-        var _arenacontent = "";
-        while (!file_text_eof(_arenafile))
+        if (file_exists(_arenadir))
         {
-            var _ln = file_text_readln(_arenafile);
-            _arenacontent += _ln;
+            show_debug_message("Reading map .arena file..");
             
-            // Found map's actual name
-            if (string_pos("longname", _ln) != 0)
+            var _arenafile = file_text_open_read(_arenadir);
+            var _arenacontent = "";
+            while (!file_text_eof(_arenafile))
             {
-                var _quotebegin = string_pos('"', _ln);
-                var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
-                var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
+                var _ln = file_text_readln(_arenafile);
+                _arenacontent += _ln;
                 
-                bspdata[? "meta-arena-longname"] = _content;
-            }
-            
-            // Found map's map file
-            if (string_pos("map", _ln) != 0)
-            {
-                var _quotebegin = string_pos('"', _ln);
-                var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
-                var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
-                
-                bspdata[? "meta-arena-map"] = _content;
-            }
-            
-            // Found map's type / tag list
-            if (string_pos("type", _ln) != 0)
-            {
-                var _quotebegin = string_pos('"', _ln);
-                var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
-                var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
-                
-                // Split them into the lists
-                var _typelist = ds_list_create();
-                var _blankpos = string_pos(" ", _content);
-                
-                while (_blankpos != 0)
+                // Found map's actual name
+                if (string_pos("longname", _ln) != 0)
                 {
-                    ds_list_add(_typelist, string_copy(_content, 1, _blankpos - 1));
-                    _content = string_delete(_content, 1, _blankpos);
-                    _blankpos = string_pos(" ", _content);
+                    var _quotebegin = string_pos('"', _ln);
+                    var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
+                    var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
+                    
+                    bspdata[? "meta-arena-longname"] = _content;
                 }
-                ds_list_add(_typelist, _content);
                 
-                bspdata[? "meta-arena-type"] = _typelist;
-            }
-            
-            // Found map's bot list
-            if (string_pos("bots", _ln) != 0)
-            {
-                var _quotebegin = string_pos('"', _ln);
-                var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
-                var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
-                
-                // Split them into the lists
-                var _botslist = ds_list_create();
-                var _blankpos = string_pos(" ", _content);
-                
-                while (_blankpos != 0)
+                // Found map's map file
+                if (string_pos("map", _ln) != 0)
                 {
-                    ds_list_add(_botslist, string_copy(_content, 1, _blankpos - 1));
-                    _content = string_delete(_content, 1, _blankpos);
-                    _blankpos = string_pos(" ", _content);
+                    var _quotebegin = string_pos('"', _ln);
+                    var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
+                    var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
+                    
+                    bspdata[? "meta-arena-map"] = _content;
                 }
-                ds_list_add(_botslist, _content);
                 
-                bspdata[? "meta-arena-bots"] = _botslist;
+                // Found map's type / tag list
+                if (string_pos("type", _ln) != 0)
+                {
+                    var _quotebegin = string_pos('"', _ln);
+                    var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
+                    var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
+                    
+                    // Split them into the lists
+                    var _typelist = ds_list_create();
+                    var _blankpos = string_pos(" ", _content);
+                    
+                    while (_blankpos != 0)
+                    {
+                        ds_list_add(_typelist, string_copy(_content, 1, _blankpos - 1));
+                        _content = string_delete(_content, 1, _blankpos);
+                        _blankpos = string_pos(" ", _content);
+                    }
+                    ds_list_add(_typelist, _content);
+                    
+                    bspdata[? "meta-arena-type"] = _typelist;
+                }
+                
+                // Found map's bot list
+                if (string_pos("bots", _ln) != 0)
+                {
+                    var _quotebegin = string_pos('"', _ln);
+                    var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
+                    var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
+                    
+                    // Split them into the lists
+                    var _botslist = ds_list_create();
+                    var _blankpos = string_pos(" ", _content);
+                    
+                    while (_blankpos != 0)
+                    {
+                        ds_list_add(_botslist, string_copy(_content, 1, _blankpos - 1));
+                        _content = string_delete(_content, 1, _blankpos);
+                        _blankpos = string_pos(" ", _content);
+                    }
+                    ds_list_add(_botslist, _content);
+                    
+                    bspdata[? "meta-arena-bots"] = _botslist;
+                }
             }
+            file_text_close(_arenafile);
+            
+            bspdata[? "meta-arena"] = _arenacontent;
+            bspdata[? "meta-map-name"] = bspdata[? "meta-arena-longname"];
         }
-        file_text_close(_arenafile);
-        
-        bspdata[? "meta-arena"] = _arenacontent;
-        bspdata[? "meta-map-name"] = bspdata[? "meta-arena-longname"];
+        else
+        {
+            show_debug_message("Can't find / read .arena file.. :(");
+        }
     }
-    else
-    {
-        show_debug_message("Can't find / read .arena file.. :(");
-    }
-}
-
-// Fetch map's texture assets direction while walking along the map folder.
-// since this data is unused but I'm leaving this mass of data to use in other cases, You may comment this chunk of code, If you want to juice out the last bits of loading time.
-var _maptexdir = _mapfolder + "\textures";
-if (directory_exists(_maptexdir))
-{
-    var _dirqueue = ds_queue_create();
-    var _texdirlist = ds_list_create();
     
-    ds_queue_enqueue(_dirqueue, _maptexdir);
-    while (!ds_queue_empty(_dirqueue)) // Search all sub-directory for files/image
+    // Fetch map's texture assets direction while walking along the map folder.
+    // since this data is unused but I'm leaving this mass of data to use in other cases, You may comment this chunk of code, If you want to juice out the last bits of loading time.
+    var _maptexdir = _mapfolder + "\textures";
+    if (directory_exists(_maptexdir))
     {
-        var _texdir = ds_queue_dequeue(_dirqueue);
+        var _dirqueue = ds_queue_create();
+        var _texdirlist = ds_list_create();
         
-        zbsp_append_log(bspdata, "DIRECTORY : " + _texdir);
-        
-        // Enqueue all possible directories first
-        var _subdir = file_find_first(_texdir + "\*", fa_directory);
-        while (_subdir != "")
+        ds_queue_enqueue(_dirqueue, _maptexdir);
+        while (!ds_queue_empty(_dirqueue)) // Search all sub-directory for files/image
         {
-            if (directory_exists(_texdir + "\" + _subdir))
-            {
-                zbsp_append_log(bspdata, "> SUBDIRECTORY : " + _subdir);
-                ds_queue_enqueue(_dirqueue, _texdir + "\" + _subdir);
-            }
+            var _texdir = ds_queue_dequeue(_dirqueue);
             
-            _subdir = file_find_next();
-        }
-        file_find_close();
-        
-        // And find all files after that
-        var _dirimg = file_find_first(_texdir + "\*.*", 0);
-        while (_dirimg != "")
-        {
-            if (file_exists(_texdir + "\" + _dirimg))
-            {
-                zbsp_append_log(bspdata, "+ FILE : " + _dirimg);
-                ds_list_add(_texdirlist, _texdir + "\" + _dirimg);
-            }
+            zbsp_append_log(bspdata, "DIRECTORY : " + _texdir);
             
-            _dirimg = file_find_next();
+            // Enqueue all possible directories first
+            var _subdir = file_find_first(_texdir + "\*", fa_directory);
+            while (_subdir != "")
+            {
+                if (directory_exists(_texdir + "\" + _subdir))
+                {
+                    zbsp_append_log(bspdata, "> SUBDIRECTORY : " + _subdir);
+                    ds_queue_enqueue(_dirqueue, _texdir + "\" + _subdir);
+                }
+                
+                _subdir = file_find_next();
+            }
+            file_find_close();
+            
+            // And find all files after that
+            var _dirimg = file_find_first(_texdir + "\*.*", 0);
+            while (_dirimg != "")
+            {
+                if (file_exists(_texdir + "\" + _dirimg))
+                {
+                    zbsp_append_log(bspdata, "+ FILE : " + _dirimg);
+                    ds_list_add(_texdirlist, _texdir + "\" + _dirimg);
+                }
+                
+                _dirimg = file_find_next();
+            }
+            file_find_close();
         }
-        file_find_close();
+        ds_queue_destroy(_dirqueue);
+        bspdata[? "meta-res-tex-dir"] = _texdirlist;
     }
-    ds_queue_destroy(_dirqueue);
-    bspdata[? "meta-res-tex-dir"] = _texdirlist;
 }
 
 
@@ -372,34 +401,37 @@ zbsp_load_lump_visdata(_filebuffer, bspdata);
 // ==================================================================
 /// Process textures information
 // ==================================================================
-// Fetch & Load textures required for map
-zbsp_append_log(bspdata, "Loading textures data.. (" + string(bspdata[? "textures-num"]) + " textures)");
-show_debug_message("Loading textures data.. (" + string(bspdata[? "textures-num"]) + " textures)");
-
-// List of texture loaded into sprites & it's texture index (for use in rendering)
-bspdata[? "textures-list"] = ds_list_create();
-bspdata[? "textures-sprites"] = ds_list_create();
-
-var _textures = bspdata[? "textures-data"];
-for (var i=0; i<bspdata[? "textures-num"]; i++)
+if (bspdata[? "has-map-asset"])
 {
-    var _asset = zbsp_fetch_asset_dir(bspdata, _textures[# eBSP_TEXTURE.DIRECTORY, i] + ".jpg");
+    // Fetch & Load textures required for map
+    zbsp_append_log(bspdata, "Loading textures data.. (" + string(bspdata[? "textures-num"]) + " textures)");
+    show_debug_message("Loading textures data.. (" + string(bspdata[? "textures-num"]) + " textures)");
     
-    if (_asset != "")
+    // List of texture loaded into sprites & it's texture index (for use in rendering)
+    bspdata[? "textures-list"] = ds_list_create();
+    bspdata[? "textures-sprites"] = ds_list_create();
+    
+    var _textures = bspdata[? "textures-data"];
+    for (var i=0; i<bspdata[? "textures-num"]; i++)
     {
-        zbsp_append_log(bspdata, "Found texture [" + _asset + "]");
-        show_debug_message("Found texture [" + _asset + "]");
+        var _asset = zbsp_fetch_asset_dir(bspdata, _textures[# eBSP_TEXTURE.DIRECTORY, i] + ".jpg");
         
-        var _spr = sprite_add(_asset, 1, false, false, 0, 0);
-        ds_list_add(bspdata[? "textures-sprites"], _spr);
-        ds_list_add(bspdata[? "textures-list"], sprite_get_texture(_spr, 0));
-    }
-    else
-    {
-        zbsp_append_log(bspdata, "Can't find [" + _textures[# eBSP_TEXTURE.DIRECTORY, i] + "]!");
-        show_debug_message("Can't find [" + _textures[# eBSP_TEXTURE.DIRECTORY, i] + "]!");
-        
-        ds_list_add(bspdata[? "textures-list"], sprite_get_texture(sprNotexture, 0)); // You can replace sprNotexture to a default error texture.
+        if (_asset != "")
+        {
+            zbsp_append_log(bspdata, "Found texture [" + _asset + "]");
+            show_debug_message("Found texture [" + _asset + "]");
+            
+            var _spr = sprite_add(_asset, 1, false, false, 0, 0);
+            ds_list_add(bspdata[? "textures-sprites"], _spr);
+            ds_list_add(bspdata[? "textures-list"], sprite_get_texture(_spr, 0));
+        }
+        else
+        {
+            zbsp_append_log(bspdata, "Can't find [" + _textures[# eBSP_TEXTURE.DIRECTORY, i] + "]!");
+            show_debug_message("Can't find [" + _textures[# eBSP_TEXTURE.DIRECTORY, i] + "]!");
+            
+            ds_list_add(bspdata[? "textures-list"], sprite_get_texture(sprNotexture, 0)); // You can replace sprNotexture to a default error texture.
+        }
     }
 }
 
@@ -456,7 +488,7 @@ surface_set_target(_lmapsurf);
 draw_clear(c_black);
 
 // Draw default / no lightmap texture
-draw_sprite(sprNotexture, 0, 0, 0);
+draw_sprite(sprNotexturewhite, 0, 0, 0);
 
 // Draw the lightmaps
 for (var i=0; i<bspdata[? "lightmaps-num"]; i++)
@@ -607,260 +639,25 @@ if (builddebugmesh)
 // ==================================================================
 /// Build vertex buffer / meshses
 // ==================================================================
-// lightmap or vertex colour? - 0 : lightmap, 1 : vertex colour
-var _lightmodel = 0;
-
-// lookup table for iterating & weaving a vertex patch
-var _patchidxlut = -1;
-
-// lightmap default uv
-var _lmapdefaultuv = 1 * _invsurfwid;
 if (buildlevelmesh)
 {
     // Build vertex buffer of faces
     zbsp_append_log(bspdata, "Building Faces VB..");
     show_debug_message("Building Faces VB..");
     
-    var _textureready = bspdata[? "has-asset"];
+    var _textureready = bspdata[? "has-map-asset"];
     
     // Prepare vertex format
     if (_textureready)
     {
-        vertex_format_begin();
-        vertex_format_add_position_3d();
-        vertex_format_add_colour();
-        vertex_format_add_textcoord();
-        vertex_format_add_custom(vertex_type_float2, vertex_usage_textcoord);
-        vertex_format_add_normal();
-        var _debugVF = vertex_format_end();
+        zbsp_vb_build_faces(bspdata);
     }
     else
     {
-        vertex_format_begin();
-        vertex_format_add_position_3d();
-        vertex_format_add_colour();
-        vertex_format_add_textcoord();
-        vertex_format_add_normal();
-        var _debugVF = vertex_format_end();
-        
-        show_debug_message("NO ASSETS");
+        zbsp_vb_build_faces_notexture(bspdata);
     }
     
-    var _faces = bspdata[? "faces-data"];
-    var _vertices = bspdata[? "vertices-data"];
-    var _meshverts = bspdata[? "meshverts-data"];
-    var _lmapinfo = bspdata[? "lightmaps-data"];
-    
-    bspdata[? "faces-buffers"] = ds_list_create();
-    for (var i=0; i<bspdata[? "faces-num"]; i++)
-    {
-        // Fetch face type
-        var _type = _faces[# eBSP_FACE.TYPE, i];
-        
-        // Create a vertexbuffer for face
-        var _debugVB = vertex_create_buffer();
-        vertex_begin(_debugVB, _debugVF);
-        
-        // Fetch first meshverts idx and number
-        var _meshvertidx = _faces[# eBSP_FACE.MESHVERT_IDX, i], _meshvertnum = _faces[# eBSP_FACE.MESHVERT_NUM, i];
-        
-        // Fetch first vertex idx and number
-        var _vertidx = _faces[# eBSP_FACE.VERTEX_IDX, i], _vertnum = _faces[# eBSP_FACE.VERTEX_NUM, i];
-        
-        // Fetch texture index
-        var _texidx = _faces[# eBSP_FACE.TEXTURE, i];
-        if (_texidx < 0)
-        {
-            show_debug_message("FACE #" + string(i) + " TEX : " + string(_texidx));
-        }
-        
-        // Fetch lightmap index
-        var _lmapidx = _faces[# eBSP_FACE.LIGHTMAP, i];
-        var _lmapu, _lmapv, _lmapusz, _lmapvsz;
-        
-        if (_lmapidx < 0)
-        {
-            // Not using lightmap? use default notexture uv instead..
-            _lmapu = _lmapdefaultuv;
-            _lmapv = _lmapdefaultuv;
-            _lmapusz = _lmapdefaultuv;
-            _lmapvsz = _lmapdefaultuv;
-        }
-        else
-        {
-            // UV starting coords
-            _lmapu = _lmapinfo[# eBSP_LIGHTMAP.UV_MIN_X, _lmapidx];
-            _lmapv = _lmapinfo[# eBSP_LIGHTMAP.UV_MIN_Y, _lmapidx];
-            
-            // UV size
-            _lmapusz = _lmapinfo[# eBSP_LIGHTMAP.UV_MAX_X, _lmapidx] - _lmapu;
-            _lmapvsz = _lmapinfo[# eBSP_LIGHTMAP.UV_MAX_Y, _lmapidx] - _lmapv;
-        }
-        
-        // Default vertex colour when using lightmap
-        // (vertex colour is mostly only used for lighting)
-        var _vertexcol = c_white;
-        
-        /// Type dependant vertex building code
-        switch (_type)
-        {
-            case eBSP_FACE_TYPE.MESH: // Mesh
-            case eBSP_FACE_TYPE.POLYGON: // Polygon (Thankfully they've already triangulated the polygons)
-                if (_textureready)
-                {
-                    for (var j=0; j<_meshvertnum; j++)
-                    {
-                        // Calculate current vertex index from meshvert offset & first vertex index
-                        var _cvertex = _vertidx + _meshverts[| _meshvertidx + j];
-                        
-                        // Append vertex to buffer
-                        vertex_position_3d(_debugVB, _vertices[# eBSP_VERTEX.X, _cvertex], _vertices[# eBSP_VERTEX.Y, _cvertex], _vertices[# eBSP_VERTEX.Z, _cvertex]);
-                        
-                        if (_lightmodel == 0)
-                        {
-                            vertex_colour(_debugVB, _vertexcol, 1);
-                        }
-                        else
-                        {
-                            vertex_colour(_debugVB, _vertices[# eBSP_VERTEX.COLOUR, _cvertex], _vertices[# eBSP_VERTEX.ALPHA, _cvertex]);
-                        }
-                        
-                        vertex_texcoord(_debugVB, _vertices[# eBSP_VERTEX.TEX_U, _cvertex], _vertices[# eBSP_VERTEX.TEX_V, _cvertex]);
-                        
-                        vertex_float2(_debugVB, _lmapu + _lmapusz * _vertices[# eBSP_VERTEX.LMAP_U, _cvertex], _lmapv + _lmapvsz * _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]);
-                        //vertex_float2(_debugVB, lerp(_lmapu, _lmapusz, _vertices[# eBSP_VERTEX.LMAP_U, _cvertex]), lerp(_lmapv, _lmapvsz, _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]));
-                        
-                        vertex_normal(_debugVB, _vertices[# eBSP_VERTEX.NORMAL_X, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Y, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Z, _cvertex]);
-                    }
-                }
-                else
-                {
-                    for (var j=0; j<_meshvertnum; j++)
-                    {
-                        // Calculate current vertex index from meshvert offset & first vertex index
-                        var _cvertex = _vertidx + _meshverts[| _meshvertidx + j];
-                        
-                        // Append vertex to buffer
-                        vertex_position_3d(_debugVB, _vertices[# eBSP_VERTEX.X, _cvertex], _vertices[# eBSP_VERTEX.Y, _cvertex], _vertices[# eBSP_VERTEX.Z, _cvertex]);
-                        
-                        if (_lightmodel == 0)
-                        {
-                            vertex_colour(_debugVB, _vertexcol, 1);
-                        }
-                        else
-                        {
-                            vertex_colour(_debugVB, _vertices[# eBSP_VERTEX.COLOUR, _cvertex], _vertices[# eBSP_VERTEX.ALPHA, _cvertex]);
-                        }
-                        
-                        vertex_texcoord(_debugVB, _lmapu + _lmapusz * _vertices[# eBSP_VERTEX.LMAP_U, _cvertex], _lmapv + _lmapvsz * _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]);
-                        //vertex_texcoord(_debugVB, _lmapu + _lmapusz * _vertices[# eBSP_VERTEX.LMAP_U, _cvertex], _lmapv + _lmapvsz * _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]);
-        
-                        vertex_normal(_debugVB, _vertices[# eBSP_VERTEX.NORMAL_X, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Y, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Z, _cvertex]);
-                    }
-                }
-                break;
-                
-            case eBSP_FACE_TYPE.BEZIERPATCH: // Bezier patch (Draw control points for now)
-                // Fetch control points grid dimensions
-                var _bezierw = _faces[# eBSP_FACE.BEZIERPATCH_W, i], _bezierh = _faces[# eBSP_FACE.BEZIERPATCH_H, i];
-                // var _bezierto
-                
-                // (DEBUG) unset texture to default
-                // ds_list_set(bspdata[? "textures-list"], i, sprite_get_texture(sprNotexture, 0));
-                
-                // show_debug_message("PATCH #" + string(i) + " | " + string(_bezierw) + ", " + string(_bezierh) + " | " + string(_vertnum));
-                
-                _patchidxlut[0, 0] = 0; _patchidxlut[0, 1] = 0;
-                _patchidxlut[1, 0] = 0; _patchidxlut[1, 1] = 1;
-                _patchidxlut[2, 0] = 1; _patchidxlut[2, 1] = 0;
-                _patchidxlut[3, 0] = 1; _patchidxlut[3, 1] = 0;
-                _patchidxlut[4, 0] = 0; _patchidxlut[4, 1] = 1;
-                _patchidxlut[5, 0] = 1; _patchidxlut[5, 1] = 1;
-                
-                // Read control points
-                if (_textureready)
-                {
-                    for (var j=0; j<_bezierw - 1; j++)
-                    {
-                        for (var k=0; k<_bezierh - 1; k++)
-                        {
-                            // Get control points for patch
-                            for (var o=0; o<6; o++)
-                            {
-                                // Calculate current vertex index
-                                var _x = j + _patchidxlut[o, 0];
-                                var _y = k + _patchidxlut[o, 1];
-                                var _cvertex = _vertidx + (_x + _y * _bezierw);
-                                
-                                var _widlerp = _x / (_bezierw - 1);
-                                var _heilerp = _y / (_bezierh - 1);
-                                
-                                var _col = make_color_rgb(_widlerp * 255, _heilerp * 255, 128);
-                                
-                                if (_cvertex > _vertnum + _vertidx)
-                                {
-                                    _col = c_fuchsia;
-                                }
-                                
-                                vertex_position_3d(_debugVB, _vertices[# eBSP_VERTEX.X, _cvertex], _vertices[# eBSP_VERTEX.Y, _cvertex], _vertices[# eBSP_VERTEX.Z, _cvertex]);
-                                // vertex_colour(_debugVB, _vertices[# eBSP_VERTEX.COLOUR, _cvertex], _vertices[# eBSP_VERTEX.ALPHA, _cvertex]);
-                                vertex_colour(_debugVB, _col, 1);
-                                vertex_texcoord(_debugVB, _vertices[# eBSP_VERTEX.TEX_U, _cvertex], _vertices[# eBSP_VERTEX.TEX_V, _cvertex]);
-                                vertex_texcoord(_debugVB, _lmapu + _lmapusz * _vertices[# eBSP_VERTEX.LMAP_U, _cvertex], _lmapv + _lmapvsz * _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]);
-                                vertex_normal(_debugVB, _vertices[# eBSP_VERTEX.NORMAL_X, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Y, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Z, _cvertex]);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    for (var j=0; j<_bezierw - 1; j++)
-                    {
-                        for (var k=0; k<_bezierh - 1; k++)
-                        {
-                            // Get control points for patch
-                            for (var o=0; o<6; o++)
-                            {
-                                // Calculate current vertex index
-                                var _x = j + _patchidxlut[o, 0];
-                                var _y = k + _patchidxlut[o, 1];
-                                var _cvertex = _vertidx + (_x + _y * _bezierw);
-                                
-                                var _widlerp = _x / (_bezierw - 1);
-                                var _heilerp = _y / (_bezierh - 1);
-                                
-                                var _col = make_color_rgb(_widlerp * 255, _heilerp * 255, 128);
-                                
-                                if (_cvertex > _vertnum + _vertidx)
-                                {
-                                    _col = c_fuchsia;
-                                }
-                                
-                                vertex_position_3d(_debugVB, _vertices[# eBSP_VERTEX.X, _cvertex], _vertices[# eBSP_VERTEX.Y, _cvertex], _vertices[# eBSP_VERTEX.Z, _cvertex]);
-                                // vertex_colour(_debugVB, _vertices[# eBSP_VERTEX.COLOUR, _cvertex], _vertices[# eBSP_VERTEX.ALPHA, _cvertex]);
-                                vertex_colour(_debugVB, _col, 1);
-                                vertex_texcoord(_debugVB, _lmapu + _lmapusz * _vertices[# eBSP_VERTEX.LMAP_U, _cvertex], _lmapv + _lmapvsz * _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]);
-                                vertex_normal(_debugVB, _vertices[# eBSP_VERTEX.NORMAL_X, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Y, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Z, _cvertex]);
-                            }
-                        }
-                    }
-                }
-                break;
-        }
-        
-        // Tidy up stuff & into the buffer list it goes
-        vertex_end(_debugVB);
-        if (vertex_get_buffer_size(_debugVB) >= 1)
-        {
-            vertex_freeze(_debugVB);
-        }
-        
-        ds_list_add(bspdata[? "faces-buffers"], _debugVB);
-    }
-    
-    bspdata[? "vb-format"] = _debugVF;
-    
-    // TIL deleting vertex format & rendering the vertex buffer with deleted format will crash the game
+    // WARNING : deleting vertex format too early & rendering the vertex buffer with deleted format will crash the game.
     //vertex_format_delete(_debugVF);
 }
 

@@ -23,6 +23,8 @@ for (var i=0; i<array_length_1d(_lightmaps); i++)
     if (sprite_exists(_lightmaps[| i])) sprite_delete(_lightmaps[| i]);
 }
 if (ds_exists(bspdata[? "lightmaps-list"], ds_type_list)) ds_list_destroy(bspdata[? "lightmaps-list"]);
+if (ds_exists(bspdata[? "res-lightatlas-surf"], ds_type_list)) surface_free(bspdata[? "res-lightatlas-surf"]);
+if (ds_exists(bspdata[? "res-lightatlas-spr"], ds_type_list)) sprite_delete(bspdata[? "res-lightatlas-spr"]);
 
 // Free map metadata lists
 if (ds_exists(bspdata[? "meta-arena-type"], ds_type_list)) ds_list_destroy(bspdata[? "meta-arena-type"]);
@@ -70,7 +72,8 @@ if (ds_map_exists(bspdata, "faces-buffers"))
 }
 
 // And free vertex formats too
-vertex_format_delete(bspdata[? "vb-format"]);
+vertex_format_delete(bspdata[? "vb-format-face-tex"]);
+vertex_format_delete(bspdata[? "vb-format-face-notex"]);
 vertex_format_delete(bspdata[? "vb-debug-format"]);
 
 ds_map_destroy(bspdata);

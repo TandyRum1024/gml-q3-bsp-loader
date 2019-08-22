@@ -15,13 +15,13 @@ var _vecsize = buffer_read(argument0, buffer_s32);
 var _veclen = _vecsize * _vecnum;
 var _vec = buffer_create(_veclen, buffer_fast, 1);//ds_list_create();
 
-buffer_copy(argument0, _off + 8, _veclen, _vec, 0);
-/*
+//buffer_copy(argument0, _off + 8, _veclen, _vec, 0);
 for (var i=0; i<_veclen; i++)
 {
-    ds_list_add(_vec, buffer_read(argument0, buffer_u8));
+    //ds_list_add(_vec, buffer_read(argument0, buffer_u8));
+    buffer_write(_vec, buffer_u8, buffer_read(argument0, buffer_u8));
 }
-*/
+
 
 argument1[? "visdata"] = _vec;
 argument1[? "visdata-num"] = _vecnum;

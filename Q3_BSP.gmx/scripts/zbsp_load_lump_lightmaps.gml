@@ -31,6 +31,8 @@ zbsp_append_log(argument1, "LIGHTMAP BUILDING BEGIN!");
 show_debug_message("LIGHTMAP BUILDING BEGIN!");
 var _time = get_timer();
 var _lmapoff = 16384; // lightmap's each channels size (in bytes)
+var _lmapgamma = true; // lightmap gamma shift
+
 var _surf = surface_create(128, 128);
 for (var i=0; i<_num; i++)
 {
@@ -46,8 +48,30 @@ for (var i=0; i<_num; i++)
     {
         // fetch B, G, R from the file & construct the #BBGGRR formatted colour
         var _peekoff = _coff + j * 3;
-        var _col = (buffer_peek(argument0, _peekoff + 2, buffer_u8) << 16) | (buffer_peek(argument0, _peekoff + 1, buffer_u8) << 8) | (buffer_peek(argument0, _peekoff, buffer_u8));
+        var _r = buffer_peek(argument0, _peekoff + 2, buffer_u8);
+        var _g = buffer_peek(argument0, _peekoff + 1, buffer_u8);
+        var _b = buffer_peek(argument0, _peekoff, buffer_u8);
         
+        if (_lmapgamma)
+        {
+            // apply gamma up
+            _r = _r << 2;
+            _g = _g << 2;
+            _b = _b << 2;
+            
+            var _max = max(_r, _g, _b);
+            
+            if (_max > 255)
+            {
+                var _factor = 255 / _max;
+                _r *= _factor;
+                _g *= _factor;
+                _b *= _factor;
+            }
+        }
+        
+        var _col = (floor(_r) << 16) | (floor(_g) << 8) | floor(_b);
+
         // plot pixel in the lightmap
         vertex_position(_vb, j & 127, j >> 7);
         vertex_colour(_vb, _col, 1);

@@ -3,229 +3,19 @@
   <Configs name="configs">
     <Config>Configs\Default</Config>
   </Configs>
-  <datafiles number="8" name="datafiles">
-    <datafile>
-      <name>cannedheat.bsp</name>
-      <exists>-1</exists>
-      <size>1328412</size>
-      <exportAction>2</exportAction>
-      <exportDir></exportDir>
-      <overwrite>0</overwrite>
-      <freeData>-1</freeData>
-      <removeEnd>0</removeEnd>
-      <store>0</store>
-      <ConfigOptions>
-        <Config name="Default">
-          <CopyToMask>9223372036854775807</CopyToMask>
-        </Config>
-      </ConfigOptions>
-      <filename>cannedheat.bsp</filename>
-    </datafile>
-    <datafile>
-      <name>gm3tourney2.zip</name>
-      <exists>-1</exists>
-      <size>7738816</size>
-      <exportAction>2</exportAction>
-      <exportDir></exportDir>
-      <overwrite>0</overwrite>
-      <freeData>-1</freeData>
-      <removeEnd>0</removeEnd>
-      <store>0</store>
-      <ConfigOptions>
-        <Config name="Default">
-          <CopyToMask>9223372036854775807</CopyToMask>
-        </Config>
-      </ConfigOptions>
-      <filename>gm3tourney2.zip</filename>
-    </datafile>
-    <datafile>
-      <name>heatctf.zip</name>
-      <exists>-1</exists>
-      <size>2047994</size>
-      <exportAction>2</exportAction>
-      <exportDir></exportDir>
-      <overwrite>0</overwrite>
-      <freeData>-1</freeData>
-      <removeEnd>0</removeEnd>
-      <store>0</store>
-      <ConfigOptions>
-        <Config name="Default">
-          <CopyToMask>9223372036854775807</CopyToMask>
-        </Config>
-      </ConfigOptions>
-      <filename>heatctf.zip</filename>
-    </datafile>
-    <datafile>
-      <name>oa_assets.pk3</name>
-      <exists>-1</exists>
-      <size>479878</size>
-      <exportAction>2</exportAction>
-      <exportDir></exportDir>
-      <overwrite>0</overwrite>
-      <freeData>-1</freeData>
-      <removeEnd>0</removeEnd>
-      <store>0</store>
-      <ConfigOptions>
-        <Config name="Default">
-          <CopyToMask>9223372036854775807</CopyToMask>
-        </Config>
-      </ConfigOptions>
-      <filename>oa_assets.pk3</filename>
-    </datafile>
-    <datafile>
-      <name>hires_assets.pk3</name>
-      <exists>-1</exists>
-      <size>251073476</size>
-      <exportAction>2</exportAction>
-      <exportDir></exportDir>
-      <overwrite>0</overwrite>
-      <freeData>-1</freeData>
-      <removeEnd>0</removeEnd>
-      <store>0</store>
-      <ConfigOptions>
-        <Config name="Default">
-          <CopyToMask>9223372036854775807</CopyToMask>
-        </Config>
-      </ConfigOptions>
-      <filename>hires_assets.pk3</filename>
-    </datafile>
-    <datafile>
-      <name>texDefault.png</name>
-      <exists>-1</exists>
-      <size>1542</size>
-      <exportAction>2</exportAction>
-      <exportDir></exportDir>
-      <overwrite>0</overwrite>
-      <freeData>-1</freeData>
-      <removeEnd>0</removeEnd>
-      <store>0</store>
-      <ConfigOptions>
-        <Config name="Default">
-          <CopyToMask>9223372036854775807</CopyToMask>
-        </Config>
-      </ConfigOptions>
-      <filename>texDefault.png</filename>
-    </datafile>
-    <datafile>
-      <name>lun3dm5.zip</name>
-      <exists>-1</exists>
-      <size>29697561</size>
-      <exportAction>2</exportAction>
-      <exportDir></exportDir>
-      <overwrite>0</overwrite>
-      <freeData>-1</freeData>
-      <removeEnd>0</removeEnd>
-      <store>0</store>
-      <ConfigOptions>
-        <Config name="Default">
-          <CopyToMask>9223372036854775807</CopyToMask>
-        </Config>
-      </ConfigOptions>
-      <filename>lun3dm5.zip</filename>
-    </datafile>
-    <datafile>
-      <name>lun3dm5.bsp</name>
-      <exists>-1</exists>
-      <size>22141152</size>
-      <exportAction>2</exportAction>
-      <exportDir></exportDir>
-      <overwrite>0</overwrite>
-      <freeData>-1</freeData>
-      <removeEnd>0</removeEnd>
-      <store>0</store>
-      <ConfigOptions>
-        <Config name="Default">
-          <CopyToMask>9223372036854775807</CopyToMask>
-        </Config>
-      </ConfigOptions>
-      <filename>lun3dm5.bsp</filename>
-    </datafile>
-  </datafiles>
+  <datafiles number="15" name="datafiles"/>
   <NewExtensions>
     <extension index="0">extensions\ImNotGUI</extension>
-    <extension index="1">extensions\Custom Sprite Framework</extension>
   </NewExtensions>
   <sounds name="sound"/>
   <sprites name="sprites">
     <sprite>sprites\spr_uiwhitepixel</sprite>
+    <sprite>sprites\sprNotexturewhite</sprite>
     <sprite>sprites\sprNotexture</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
   <scripts name="scripts">
-    <scripts name="image_framework_V2.9">
-      <scripts name="draw">
-        <script>scripts\draw_image.gml</script>
-        <script>scripts\draw_image_ext.gml</script>
-        <script>scripts\draw_image_general.gml</script>
-        <script>scripts\draw_image_part.gml</script>
-        <script>scripts\draw_image_part_ext.gml</script>
-        <script>scripts\draw_image_pos.gml</script>
-        <script>scripts\draw_image_pos_ext.gml</script>
-        <script>scripts\draw_image_pos_general.gml</script>
-        <script>scripts\draw_image_stretched.gml</script>
-        <script>scripts\draw_image_stretched_ext.gml</script>
-        <script>scripts\draw_image_tiled.gml</script>
-        <script>scripts\draw_image_tiled_area.gml</script>
-        <script>scripts\draw_image_tiled_area_ext.gml</script>
-        <script>scripts\draw_image_tiled_ext.gml</script>
-      </scripts>
-      <scripts name="Stream">
-        <script>scripts\image_stream_start.gml</script>
-        <script>scripts\image_stream_finish.gml</script>
-        <script>scripts\image_stream_add.gml</script>
-        <script>scripts\image_stream_add_files.gml</script>
-        <script>scripts\image_stream_add_sheet.gml</script>
-        <script>scripts\image_stream_add_3d.gml</script>
-        <script>scripts\image_stream_progress.gml</script>
-        <script>scripts\image_stream_receive.gml</script>
-        <script>scripts\image_stream_is_active.gml</script>
-        <script>scripts\image_stream_is_received.gml</script>
-        <script>scripts\image_stream_stop.gml</script>
-      </scripts>
-      <scripts name="Cache">
-        <script>scripts\image_cache_create.gml</script>
-        <script>scripts\image_cache_save.gml</script>
-        <script>scripts\image_cache_load.gml</script>
-        <script>scripts\image_cache_delete.gml</script>
-        <script>scripts\image_cache_unpack.gml</script>
-      </scripts>
-      <scripts name="Group">
-        <script>scripts\image_group_clear.gml</script>
-        <script>scripts\image_group_create.gml</script>
-        <script>scripts\image_group_destroy.gml</script>
-        <script>scripts\image_group_find_image.gml</script>
-        <script>scripts\image_group_exists.gml</script>
-        <script>scripts\image_group_flush.gml</script>
-        <script>scripts\image_group_prefetch.gml</script>
-      </scripts>
-      <scripts name="Get">
-        <scripts name="Set">
-          <script>scripts\image_get_filename.gml</script>
-          <script>scripts\image_get_number.gml</script>
-          <script>scripts\image_get_identifier.gml</script>
-          <script>scripts\image_get_width.gml</script>
-          <script>scripts\image_get_height.gml</script>
-          <script>scripts\image_get_xoffset.gml</script>
-          <script>scripts\image_get_yoffset.gml</script>
-          <script>scripts\image_get_uvs.gml</script>
-          <script>scripts\image_set_offset.gml</script>
-          <script>scripts\image_get_texturepage.gml</script>
-          <script>scripts\image_get_texture.gml</script>
-          <script>scripts\image_set_bbox.gml</script>
-          <script>scripts\image_get_bbox_left.gml</script>
-          <script>scripts\image_get_bbox_top.gml</script>
-          <script>scripts\image_get_bbox_right.gml</script>
-          <script>scripts\image_get_bbox_bottom.gml</script>
-        </scripts>
-      </scripts>
-      <script>scripts\image_system_init.gml</script>
-      <script>scripts\image_system_cleanup.gml</script>
-      <script>scripts\image_exists.gml</script>
-      <script>scripts\image_save.gml</script>
-      <script>scripts\image_save_strip.gml</script>
-      <script>scripts\image_save_sheet.gml</script>
-    </scripts>
     <scripts name="3DHELPER">
       <script>scripts\z3d_init.gml</script>
       <script>scripts\z3d_accelerate.gml</script>
@@ -233,13 +23,23 @@
     </scripts>
     <scripts name="ZBSP">
       <scripts name="HELPER">
+        <scripts name="VERTEXBUFFER">
+          <script>scripts\zbsp_vb_lightmapcube.gml</script>
+          <script>scripts\zbsp_vb_wirecube.gml</script>
+          <script>scripts\zbsp_vb_face.gml</script>
+          <script>scripts\zbsp_vb_build_faces.gml</script>
+          <script>scripts\zbsp_vb_build_faces_notexture.gml</script>
+          <script>scripts\zbsp_vb_build_leafs_notexture.gml</script>
+        </scripts>
+        <scripts name="MAP">
+          <script>scripts\zbsp_get_leaf_idx.gml</script>
+          <script>scripts\zbsp_check_visible.gml</script>
+          <script>scripts\zbsp_get_visible_leafs.gml</script>
+        </scripts>
         <script>scripts\zbsp_helper_vars.gml</script>
         <script>scripts\zbsp_append_log.gml</script>
         <script>scripts\zbsp_read_str.gml</script>
         <script>scripts\zbsp_calc_lightdot.gml</script>
-        <script>scripts\zbsp_vb_lightmapcube.gml</script>
-        <script>scripts\zbsp_vb_face.gml</script>
-        <script>scripts\zbsp_vb_wirecube.gml</script>
       </scripts>
       <scripts name="LUMPS">
         <script>scripts\zbsp_load_lump_entities.gml</script>
@@ -266,11 +66,11 @@
         <script>scripts\zbsp_atlas_add_sprite.gml</script>
         <script>scripts\zbsp_atlas_end.gml</script>
       </scripts>
-      <script>scripts\zbsp_init.gml</script>
       <script>scripts\zbsp_load_map.gml</script>
       <script>scripts\zbsp_load_lump_directory.gml</script>
       <script>scripts\zbsp_free_map.gml</script>
       <script>scripts\zbsp_fetch_asset_dir.gml</script>
+      <script>scripts\zbsp_reset_baseassets.gml</script>
     </scripts>
     <scripts name="IMNOTGUI">
       <scripts name="DRAW">

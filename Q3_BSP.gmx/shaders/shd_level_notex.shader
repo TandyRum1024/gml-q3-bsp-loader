@@ -9,12 +9,16 @@ attribute vec2 in_TextureCoord;              // (u,v)
 varying vec2 v_vTexcoord;
 varying vec4 v_vColour;
 
+uniform vec3 uTint;
+
 void main()
 {
     vec4 object_space_pos = vec4( in_Position.x, in_Position.y, in_Position.z, 1.0);
     gl_Position = gm_Matrices[MATRIX_WORLD_VIEW_PROJECTION] * object_space_pos;
     
     v_vColour = in_Colour;
+    v_vColour.xyz *= uTint;
+    
     v_vTexcoord = in_TextureCoord;
 }
 
@@ -27,6 +31,6 @@ varying vec4 v_vColour;
 void main()
 {
     vec4 testuv1 = vec4(v_vTexcoord.x, v_vTexcoord.y, 0.5, 1.0);
-    gl_FragColor = v_vColour * 2.0 * texture2D( gm_BaseTexture, v_vTexcoord );
+    gl_FragColor = v_vColour * texture2D( gm_BaseTexture, v_vTexcoord );
 }
 
