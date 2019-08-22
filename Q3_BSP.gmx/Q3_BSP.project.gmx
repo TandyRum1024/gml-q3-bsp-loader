@@ -3,7 +3,7 @@
   <Configs name="configs">
     <Config>Configs\Default</Config>
   </Configs>
-  <datafiles number="15" name="datafiles"/>
+  <datafiles number="16" name="datafiles"/>
   <NewExtensions>
     <extension index="0">extensions\ImNotGUI</extension>
   </NewExtensions>

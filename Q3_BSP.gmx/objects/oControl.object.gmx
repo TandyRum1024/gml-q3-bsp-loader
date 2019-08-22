@@ -29,7 +29,7 @@
 
 // Set asset directory &amp; Load map
 //zbsp_reset_baseassets("");
-map = zbsp_load_map("lun3dm5.bsp", -1, false, false);
+map = zbsp_load_map("asylum.bsp", -1, false, false);
 zbsp_vb_build_leafs_notexture(map);
 
 drawLeafBatch = true; // draw "batched" leaf vertex buffer instead of drawing every faces of it?
