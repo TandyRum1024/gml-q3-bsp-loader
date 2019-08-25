@@ -54,12 +54,12 @@ if (isHot)
     if (isActive)
     {
         iui_rect(argument0, argument1, argument2, argument3, iuiColButtonActiveBackdrop); // backdrop
-        iui_rect(argument0, argument1, argument2, 9, iuiColButtonActiveBackdropTop); // top line / box for style?
+        iui_rect(argument0, argument1, argument2, 2, iuiColButtonActiveBackdropTop); // top line / box for style?
     }
     else // nope
     {
         iui_rect(argument0, argument1, argument2, argument3, iuiColButtonHotBackdrop);
-        iui_rect(argument0, argument1, argument2, 9, iuiColButtonHotBackdropTop);
+        iui_rect(argument0, argument1, argument2, 2, iuiColButtonHotBackdropTop);
     }
 }
 else // Nope
@@ -68,12 +68,12 @@ else // Nope
     if (isActive)
     {
         iui_rect(argument0, argument1, argument2, argument3, iuiColButtonActiveBackdrop);
-        iui_rect(argument0, argument1, argument2, 9, iuiColButtonActiveBackdropTop2);
+        iui_rect(argument0, argument1, argument2, 2, iuiColButtonActiveBackdropTop2);
     }
     else // default
     {
         iui_rect(argument0, argument1, argument2, argument3, iuiColButtonBackdrop);
-        iui_rect(argument0, argument1, argument2, 5, iuiColButtonBackdropTop);
+        iui_rect(argument0, argument1, argument2, 2, iuiColButtonBackdropTop);
     }
 }
 

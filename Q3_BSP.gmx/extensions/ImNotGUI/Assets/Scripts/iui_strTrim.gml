@@ -1,5 +1,5 @@
-#define strTrim
-///strTrim(string, width)
+#define iui_strTrim
+///iui_strTrim(string, width)
 /**
     Trims and adds "..." to string if the string is longer than [width].
     
@@ -24,7 +24,7 @@ if (strLen * em_ > argument1)
 return str;
 
 #define strTrim_nodots
-///strTrim_nodots(string, width)
+///iui_strTrim_nodots(string, width)
 /**
     Trims if the string is longer than [width].
     

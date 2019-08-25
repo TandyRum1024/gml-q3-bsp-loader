@@ -60,7 +60,7 @@ if (iui_valign != fa_top)
         yoff -= em_;
 }
 
-iui_rect(argument0 - 2 + xoff, argument1 + yoff, strWid + 4, argument4, colLighter_adv(argument3, -42, 1.15, 1.3, 1.05)); // underline
+iui_rect(argument0 - 2 + xoff, argument1 + yoff, strWid + 4, argument4, iui_colLighter_adv(argument3, -42, 1.15, 1.3, 1.05)); // underline
 iui_label(argument0, argument1, argument2, argument3);
 
 #define iui_label_ext

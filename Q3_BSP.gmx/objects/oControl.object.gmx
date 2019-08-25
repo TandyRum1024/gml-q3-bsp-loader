@@ -161,6 +161,8 @@ debugShowAxis = false;
 // Show debug panel?
 debugPanel = false;
 
+uiUntexturebatch = false;
+
 // Interpolation on/off
 debugTextureLerp = false;
 
@@ -419,23 +421,36 @@ if (BSPMapLoaded)
           <argument>
             <kind>1</kind>
             <string>/// Load BSP
-d3d_end();
-d3d_set_projection_ortho(0, 0, room_width, room_height, 0);
-display_reset(0, false);
-
-texture_set_interpolation(false);
-
 if (BSPMustLoad)
 {
+    // Set variables
+    if (uiUntexturebatch)
+    {
+        drawNoTexture = true;
+        drawLeafBatch = true;
+    }
+    else
+    {
+        drawNoTexture = false;
+        drawLeafBatch = true;
+    }
+    
+    // Load
+    d3d_end();
+    d3d_set_projection_ortho(0, 0, room_width, room_height, 0);
+    display_reset(0, false);
+    
+    texture_set_interpolation(false);
+    
     viewer_reload();
     BSPAssetsDir = -1;
     BSPMustLoad = false;
+    
+    texture_set_interpolation(true);
+
+    display_reset(8, false);
+    d3d_start();
 }
-
-texture_set_interpolation(true);
-
-display_reset(8, false);
-d3d_start();
 </string>
           </argument>
         </arguments>
@@ -503,7 +518,7 @@ if (debugPanel)
             iui_align_pop();
             
             var _mustload = false;
-            if (iui_button(10, _topmarginy + 20, 150, 32, "LOAD MAP"))
+            if (iui_button(10, _topmarginy, 150, 32, "LOAD MAP"))
             {
                 BSPMapDir = get_open_filename_ext("Quake 3 BSP maps|*.bsp|Quake 3 BSP zip/pk3 maps|*.zip;*.pk3", "", "", "Time to open a map file...");
                 BSPMustLoad = true;
@@ -513,10 +528,21 @@ if (debugPanel)
                 camZ = 0;
             }
             
-            if (iui_button(10, _topmarginy + 60, 150, 32, "LOAD ASSETS"))
+            if (iui_button(10, _topmarginy + 40, 150, 32, "LOAD ASSETS"))
             {
                 BSPAssetsDir = get_open_filename_ext("Quake 3 assets|*.pk3", "", "", "Time to open a assets file...");
                 BSPMustLoad = true;
+            }
+            
+            iui_label_shadow(50, _topmarginy + 82, "Batched", iuCream, 0, 1, c_black);
+            uiUntexturebatch = iui_checkbox(12, _topmarginy + 90, 16, 16, uiUntexturebatch, "uiChecker");
+            
+            if (iui_hotItem == iui_get_id("uiChecker"))
+            {
+                var _str = "If enabled, The map will always be loaded untextured#(but lightmaps will still be rendered) &amp; rendered as batch by BSP leaves#TLDR; Sacrifices the diffuse texture mapping for#a better performance.";
+                iui_rect(mouse_x + 10, mouse_y + 10, string_width(_str) + 20, string_height(_str) + 20, c_black);
+                iui_rect(mouse_x, mouse_y, string_width(_str) + 20, string_height(_str) + 20, iuPiss);
+                iui_label(mouse_x + 10, mouse_y + 10, _str, iuHellaDark);
             }
             break;
             
@@ -598,14 +624,14 @@ iui_align_push(2, 2);
 if (mouseLock)
 {
     var _wid = string_width("MOUSE LOCKED"), _hei = string_height("MOUSE LOCKED");
-    iui_rect_pos(_scrw - _wid, _scrh - _hei, _scrw, _scrh, $FF00FF, 1);
-    iui_label_shadow(_scrw, _scrh, "MOUSE LOCKED", c_white, 0, 1, c_black);
+    iui_rect_pos(_scrw - _wid, _scrh - _hei, _scrw, _scrh, iuPiss, 1);
+    iui_label_shadow(_scrw, _scrh, "MOUSE LOCKED", iuHellaDark, 0, 1, c_black);
 }
 else
 {
     var _wid = string_width("MOUSE UNLOCKED"), _hei = string_height("MOUSE UNLOCKED");
-    iui_rect_pos(_scrw - _wid, _scrh - _hei, _scrw, _scrh, $FF00FF, 1);
-    iui_label_shadow(_scrw, _scrh, "MOUSE UNLOCKED", c_white, 0, 1, c_black);
+    iui_rect_pos(_scrw - _wid, _scrh - _hei, _scrw, _scrh, iuPiss, 1);
+    iui_label_shadow(_scrw, _scrh, "MOUSE UNLOCKED", iuHellaDark, 0, 1, c_black);
 }
 iui_align_pop();
 
@@ -622,8 +648,8 @@ iui_align_push(2, 0);
 var _str = "FPS : " + string(fps_real) + "#&lt;L&gt; : enable mouselook#&lt;E&gt; : toggle debug menu";
 
 var _wid = string_width(_str), _hei = string_height(_str);
-iui_rect_pos(_scrw - _wid, 0, _scrw, _hei, $FF00FF, 1);
-iui_label_shadow(_scrw, 0, _str, c_white, 0, 1, c_black);
+iui_rect_pos(_scrw - _wid, 0, _scrw, _hei, iuPiss, 1);
+iui_label_shadow(_scrw, 0, _str, iuHellaDark, 0, 1, c_black);
 iui_align_pop();
 </string>
           </argument>

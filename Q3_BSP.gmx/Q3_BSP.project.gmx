@@ -13,6 +13,7 @@
     <sprite>sprites\sprNotexturewhite</sprite>
     <sprite>sprites\sprNotexture</sprite>
     <sprite>sprites\sprShrug</sprite>
+    <sprite>sprites\spr_uicheck</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
@@ -92,6 +93,7 @@
         <script>scripts\iui_label.gml</script>
         <script>scripts\iui_slider_h.gml</script>
         <script>scripts\iui_sprite.gml</script>
+        <script>scripts\iui_checkbox.gml</script>
       </scripts>
       <script>scripts\iui_reset.gml</script>
       <script>scripts\iui_init.gml</script>
@@ -102,13 +104,14 @@
       <script>scripts\iui_begin.gml</script>
       <script>scripts\iui_end.gml</script>
       <script>scripts\iui_update_io.gml</script>
-      <script>scripts\col16.gml</script>
-      <script>scripts\colLighter.gml</script>
+      <script>scripts\iui_col16.gml</script>
+      <script>scripts\iui_colLighter.gml</script>
       <script>scripts\iui_throwup.gml</script>
       <script>scripts\strTrim.gml</script>
       <script>scripts\pack.gml</script>
       <script>scripts\shove.gml</script>
       <script>scripts\asciiShift.gml</script>
+      <script>scripts\iui_style.gml</script>
     </scripts>
     <script>scripts\trim_text_lines.gml</script>
     <script>scripts\viewer_reload.gml</script>

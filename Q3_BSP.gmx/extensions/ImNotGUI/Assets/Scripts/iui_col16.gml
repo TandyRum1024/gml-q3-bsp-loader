@@ -1,4 +1,4 @@
-///col16( RRGGBB_HEX )
+///iui_col16( RRGGBB_HEX )
 /**
     Converts big-endian hex colour to little-endian for GM to use.
     

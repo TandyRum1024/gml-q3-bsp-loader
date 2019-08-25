@@ -1,4 +1,4 @@
-///shove( array, adsad, fjskhfsfkdg, qwiuriwefd, ... )
+///iui_shove( array, adsad, fjskhfsfkdg, qwiuriwefd, ... )
 /**
     Appends n' returns array
 **/

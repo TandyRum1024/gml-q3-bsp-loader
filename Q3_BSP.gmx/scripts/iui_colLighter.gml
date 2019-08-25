@@ -1,4 +1,4 @@
-#define colLighter
+#define iui_colLighter
 ///colLighter( colour, howmuch )
 /**
     Makes the colour lighter

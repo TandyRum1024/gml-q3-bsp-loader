@@ -1,4 +1,4 @@
-///pack(val1, val2, splöts prlrllllsshhh :D, ...)
+///iui_pack(val1, val2, splöts prlrllllsshhh :D, ...)
 /**
     Packs n' returns array
 **/

@@ -44,74 +44,13 @@ IUI_SINE_LUT_45DEG = 0.70710696969696969; // Sine 45deg (also 69 lol)
 
 /// Styles
 ///=========================================================
-// colours
-iuHellaDark = col16($191817);
-iuDark      = col16($313435);
-iuDark2     = col16($3F494F);
-iuNormal    = col16($637674);
-iuCream     = col16($EFE8C4);
-iuCreamDark = col16($E0D3A7);
-iuMint      = col16($25CDA3);
-iuSky       = col16($68B9C8);
-iuRed       = col16($ED3255);
-iuPiss      = col16($EABF11);
-iuBrown     = col16($5A4D48);
-
-// Button
-iuiButtonShadow    = false;
-iuiColButtonShadow = iuHellaDark;
-iuiColButtonBackdrop    = iuDark2;
-iuiColButtonBackdropTop = iuMint;
-iuiColButtonActiveBackdrop     = iuHellaDark;
-iuiColButtonActiveBackdropTop  = iuMint;
-iuiColButtonActiveBackdropTop2 = iuPiss; // when active but mouse is out of the button
-iuiColButtonHotBackdrop    = iuNormal;
-iuiColButtonHotBackdropTop = iuMint;
-iuiColButtonLabel          = iuCreamDark;
-
-// Tab
-iuiColTabLabel     = iuCream;
-iuiColTabHot       = iuNormal;
-iuiColTabHotAccent = iuPiss;
-iuiColTabCurrent       = iuHellaDark;
-iuiColTabCurrentAccent = iuMint;
-// stripe coloured tab
-iuiColTabNum    = 2; // number of tab colours
-iuiColTab       = 0;
-iuiColTabAccent = 0;
-iuiColTab[0]       = iuDark;
-iuiColTabAccent[0] = iuNormal;
-iuiColTab[1]       = colLighter(iuDark, -5);
-iuiColTabAccent[1] = colLighter(iuNormal, -5);
-
-// Text box
-iuiTextBoxRainbow   = true; // rainbow colour when active
-iuiColTextBoxFill   = colLighter(iuHellaDark, 5);
-iuiColTextBoxText   = iuCream;
-iuiColTextBoxBorder = iuSky;
-iuiColTextBoxActiveFill   = iuHellaDark;
-iuiColTextBoxActiveBorder = iuHellaDark;
-iuiColTextBoxHotFill   = colLighter(iuHellaDark, 7);
-iuiColTextBoxHotBorder = iuMint;
-
-// Slider
-// display min, max and value on active?
-iuiSliderDisplayValue = true;
-// horizontal
-iuiSliderHWid = 20;
-iuiSliderHHei = 42;
-// vertical
-iuiSliderVWid = 42;
-iuiSliderVHei = 20;
-// How thick the guideline(?) is
-iuiSliderThick = 8;
-
-iuiColSliderLine   = iuHellaDark;
-iuiColSlider       = iuNormal;
-iuiColSliderActive = iuDark2;
-iuiColSliderHot    = colLighter(iuNormal, 10);
+iui_style();
 
 
 ///=========================================================
+// whoow weew
 iui_init_vars();
 iuiAnimTime = 0;
+
+// optional - set font
+// draw_set_font(fnt_consolas);

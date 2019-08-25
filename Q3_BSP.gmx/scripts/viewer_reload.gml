@@ -28,21 +28,28 @@ for (var i=0; i<map[? "faces-num"]; i++)
 // Load base asset & BSP
 if (drawNoTexture)
 {
-    zbsp_reset_baseassets(-1);
+    //zbsp_reset_baseassets(-1);
     
     show_debug_message("Loading map");
     map = zbsp_load_map(BSPMapDir, -1, false, true);
     
-    show_debug_message("Building mesh");
-    if (drawLeafBatch)
+    if (map[? "success"])
     {
-        zbsp_vb_build_leafs_notexture(map);
-        BSPMapVB = map[? "vb-leafs"];
+        show_debug_message("Building mesh");
+        if (drawLeafBatch)
+        {
+            zbsp_vb_build_leafs_notexture(map);
+            BSPMapVB = map[? "vb-leafs"];
+        }
+        else
+        {
+            zbsp_vb_build_faces_notexture(map);
+            BSPMapVB = map[? "vb-faces"];
+        }
     }
     else
     {
-        zbsp_vb_build_faces_notexture(map);
-        BSPMapVB = map[? "vb-faces"];
+        show_debug_message("Level loading failed");
     }
 }
 else

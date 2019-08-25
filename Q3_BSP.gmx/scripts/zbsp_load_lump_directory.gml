@@ -3,6 +3,8 @@
     Loads lump's directory (offset & length) from given file buffer into the given map
 */
 
+buffer_seek(argument0, buffer_seek_start, 8);
+
 // load each lumps directory entries
 for (var i=0; i<array_length_1d(global.BSPLumpNames); i++)
 {

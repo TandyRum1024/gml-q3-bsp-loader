@@ -1,5 +1,5 @@
-#define colLighter
-///colLighter( colour, howmuch )
+#define iui_colLighter
+///iui_colLighter( colour, howmuch )
 /**
     Makes the colour lighter
 **/
@@ -9,8 +9,8 @@ var G = (argument0&$00FF00)>>8;
 var B = (argument0&$FF0000)>>16;
 return (min(max((B+argument1),0), $FF) << 16) | (min(max((G+argument1*1.3),0), $FF) << 8) | min(max((R+argument1*1.5),0), $FF);
 
-#define colLighter_adv
-///colLighter_adv( colour, howmuch, rmod, gmod, bmod )
+#define iui_colLighter_adv
+///iui_colLighter_adv( colour, howmuch, rmod, gmod, bmod )
 /**
     Makes the colour lighter
 **/

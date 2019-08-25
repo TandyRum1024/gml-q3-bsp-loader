@@ -72,7 +72,7 @@ for (i = 0; i < numTabs; i++)
             switch (argument6)
             {
                 case 1: // TRIM
-                    tmpLabel = strTrim(tmpLabel, tabW);
+                    tmpLabel = iui_strTrim(tmpLabel, tabW);
                     break;
                 case 2: // RESIZE
                     tabBoxW = (tabLabelWid + 20); // add padding :>

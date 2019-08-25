@@ -1,5 +1,5 @@
-#define asciiShift
-///asciiShift(asciiCode)
+#define iui_asciiShift
+///iui_asciiShift(asciiCode)
 /**
     Converts smöll ascii chars to shift-pressed one.
     
@@ -124,7 +124,7 @@ if (argument0 >= 48 && argument0 <= 57)
 return shiftChar;
 
 #define asciiUnShift
-///asciiUnShift(asciiCode)
+///iui_asciiUnShift(asciiCode)
 /**
     Converts shift-pressed ascii chars to smöll one.
     
