@@ -118,40 +118,179 @@ for (var i=0; i<bspdata[? "leafs-num"]; i++)
             
             case eBSP_FACE_TYPE.BILLBOARD: // Billboard
                 
+                break;
+                
             case eBSP_FACE_TYPE.BEZIERPATCH: // Bezier patch (Draw control points for now)
                 // Fetch control points grid dimensions
                 var _bezierw = _faces[# eBSP_FACE.BEZIERPATCH_W, _faceidx], _bezierh = _faces[# eBSP_FACE.BEZIERPATCH_H, _faceidx];
                 
-                // Read control points
-                for (var j=0; j<_bezierw - 1; j++)
+                // Calculate numbers of bezier patch in each axis
+                var _beziernumx = floor((_bezierw - 1) / 2), _beziernumy = floor((_bezierh - 1) / 2);
+                
+                // Build list of patch
+                var _patches = -1, _patchidx = 0;
+                var _patchverts = -1;
+                var _patchvertdata = -1;
+                var _patchpoints = -1;
+                
+                for (var _px=0; _px<_beziernumx; _px++)
                 {
-                    for (var k=0; k<_bezierh - 1; k++)
+                    for (var _py=0; _py<_beziernumy; _py++)
                     {
-                        // Get control points for patch
-                        for (var o=0; o<6; o++)
+                        // get 3x3 control points for each patch
+                        _patchpoints = -1;
+                                                
+                        var _pbeginx = _px * 2;
+                        var _pbeginy = _py * 2;
+                        
+                        for (var _ox=0; _ox<3; _ox++)
                         {
-                            // Calculate current vertex index
-                            var _x = j + _patchidxlut[o, 0];
-                            var _y = k + _patchidxlut[o, 1];
-                            var _cvertex = _vertidx + (_x + _y * _bezierw);
+                            for (var _oy=0; _oy<3; _oy++)
+                            {
+                                var _idx = _ox + _oy * 3;
+                                _patchpoints[_idx] = _vertidx + (_pbeginx + _pbeginy * _bezierw) + (_ox + _oy * _bezierw);
+                            }
+                        }
+                        
+                        _patches[_patchidx++] = _patchpoints;
+                    }
+                }
+                
+                // Tessellate bezier patch
+                var _levels = 9;
+                var _levelside = _levels + 1;
+                for (var p=0; p<_patchidx; p++)
+                {
+                    _patchpoints = _patches[@ p];
+                    _patchvertdata = -1;
+                    
+                    // Iterate columns
+                    for (var c=0; c<_levelside; c++)
+                    {
+                        var _rowlerp = c / _levels;
+                        var _rowlerpi = 1 - _rowlerp;
+                        
+                        // Cache 3x3 control points, We're gonna index them A LOT when we're interpolating for bezier curve
+                        // Control points column 1, [0, 3, 6]
+                        var _cpc1r1 = _patchpoints[@ 0];
+                        var _cpc1r2 = _patchpoints[@ 3];
+                        var _cpc1r3 = _patchpoints[@ 6];
+                        
+                        // Control points column 2, [1, 4, 7]
+                        var _cpc2r1 = _patchpoints[@ 1];
+                        var _cpc2r2 = _patchpoints[@ 4];
+                        var _cpc2r3 = _patchpoints[@ 7];
+                        
+                        // Control points column 3, [2, 5, 8]
+                        var _cpc3r1 = _patchpoints[@ 2];
+                        var _cpc3r2 = _patchpoints[@ 5];
+                        var _cpc3r3 = _patchpoints[@ 8];
+                        
+                        // Calculate coefficients
+                        var _lerpi2 = _rowlerpi * _rowlerpi;
+                        var _lerp2 = _rowlerp * _rowlerp;
+                        var _2lil = 2 * _rowlerpi * _rowlerp;
+                        
+                        // Calculate & Bezier curve / Interpolate all 3 columns of control points attributes
+                        // vertex xyz
+                        var _cp1x = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.X, _cpc1r1], _vertices[# eBSP_VERTEX.X, _cpc1r2], _vertices[# eBSP_VERTEX.X, _cpc1r3], _lerpi2, _lerp2, _2lil);
+                        var _cp2x = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.X, _cpc2r1], _vertices[# eBSP_VERTEX.X, _cpc2r2], _vertices[# eBSP_VERTEX.X, _cpc2r3], _lerpi2, _lerp2, _2lil);
+                        var _cp3x = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.X, _cpc3r1], _vertices[# eBSP_VERTEX.X, _cpc3r2], _vertices[# eBSP_VERTEX.X, _cpc3r3], _lerpi2, _lerp2, _2lil);
+                        
+                        var _cp1y = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.Y, _cpc1r1], _vertices[# eBSP_VERTEX.Y, _cpc1r2], _vertices[# eBSP_VERTEX.Y, _cpc1r3], _lerpi2, _lerp2, _2lil);
+                        var _cp2y = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.Y, _cpc2r1], _vertices[# eBSP_VERTEX.Y, _cpc2r2], _vertices[# eBSP_VERTEX.Y, _cpc2r3], _lerpi2, _lerp2, _2lil);
+                        var _cp3y = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.Y, _cpc3r1], _vertices[# eBSP_VERTEX.Y, _cpc3r2], _vertices[# eBSP_VERTEX.Y, _cpc3r3], _lerpi2, _lerp2, _2lil);
+                        
+                        var _cp1z = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.Z, _cpc1r1], _vertices[# eBSP_VERTEX.Z, _cpc1r2], _vertices[# eBSP_VERTEX.Z, _cpc1r3], _lerpi2, _lerp2, _2lil);
+                        var _cp2z = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.Z, _cpc2r1], _vertices[# eBSP_VERTEX.Z, _cpc2r2], _vertices[# eBSP_VERTEX.Z, _cpc2r3], _lerpi2, _lerp2, _2lil);
+                        var _cp3z = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.Z, _cpc3r1], _vertices[# eBSP_VERTEX.Z, _cpc3r2], _vertices[# eBSP_VERTEX.Z, _cpc3r3], _lerpi2, _lerp2, _2lil);
+                        
+                        // lightmap uv
+                        var _cp1lu = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.LMAP_U, _cpc1r1], _vertices[# eBSP_VERTEX.LMAP_U, _cpc1r2], _vertices[# eBSP_VERTEX.LMAP_U, _cpc1r3], _lerpi2, _lerp2, _2lil);
+                        var _cp2lu = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.LMAP_U, _cpc2r1], _vertices[# eBSP_VERTEX.LMAP_U, _cpc2r2], _vertices[# eBSP_VERTEX.LMAP_U, _cpc2r3], _lerpi2, _lerp2, _2lil);
+                        var _cp3lu = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.LMAP_U, _cpc3r1], _vertices[# eBSP_VERTEX.LMAP_U, _cpc3r2], _vertices[# eBSP_VERTEX.LMAP_U, _cpc3r3], _lerpi2, _lerp2, _2lil);
+                        
+                        var _cp1lv = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.LMAP_V, _cpc1r1], _vertices[# eBSP_VERTEX.LMAP_V, _cpc1r2], _vertices[# eBSP_VERTEX.LMAP_V, _cpc1r3], _lerpi2, _lerp2, _2lil);
+                        var _cp2lv = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.LMAP_V, _cpc2r1], _vertices[# eBSP_VERTEX.LMAP_V, _cpc2r2], _vertices[# eBSP_VERTEX.LMAP_V, _cpc2r3], _lerpi2, _lerp2, _2lil);
+                        var _cp3lv = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.LMAP_V, _cpc3r1], _vertices[# eBSP_VERTEX.LMAP_V, _cpc3r2], _vertices[# eBSP_VERTEX.LMAP_V, _cpc3r3], _lerpi2, _lerp2, _2lil);
+                        
+                        // normal
+                        var _cp1nx = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.NORMAL_X, _cpc1r1], _vertices[# eBSP_VERTEX.NORMAL_X, _cpc1r2], _vertices[# eBSP_VERTEX.NORMAL_X, _cpc1r3], _lerpi2, _lerp2, _2lil);
+                        var _cp2nx = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.NORMAL_X, _cpc2r1], _vertices[# eBSP_VERTEX.NORMAL_X, _cpc2r2], _vertices[# eBSP_VERTEX.NORMAL_X, _cpc2r3], _lerpi2, _lerp2, _2lil);
+                        var _cp3nx = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.NORMAL_X, _cpc3r1], _vertices[# eBSP_VERTEX.NORMAL_X, _cpc3r2], _vertices[# eBSP_VERTEX.NORMAL_X, _cpc3r3], _lerpi2, _lerp2, _2lil);
+                        
+                        var _cp1ny = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.NORMAL_Y, _cpc1r1], _vertices[# eBSP_VERTEX.NORMAL_Y, _cpc1r2], _vertices[# eBSP_VERTEX.NORMAL_Y, _cpc1r3], _lerpi2, _lerp2, _2lil);
+                        var _cp2ny = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.NORMAL_Y, _cpc2r1], _vertices[# eBSP_VERTEX.NORMAL_Y, _cpc2r2], _vertices[# eBSP_VERTEX.NORMAL_Y, _cpc2r3], _lerpi2, _lerp2, _2lil);
+                        var _cp3ny = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.NORMAL_Y, _cpc3r1], _vertices[# eBSP_VERTEX.NORMAL_Y, _cpc3r2], _vertices[# eBSP_VERTEX.NORMAL_Y, _cpc3r3], _lerpi2, _lerp2, _2lil);
+                        
+                        var _cp1nz = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.NORMAL_Z, _cpc1r1], _vertices[# eBSP_VERTEX.NORMAL_Z, _cpc1r2], _vertices[# eBSP_VERTEX.NORMAL_Z, _cpc1r3], _lerpi2, _lerp2, _2lil);
+                        var _cp2nz = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.NORMAL_Z, _cpc2r1], _vertices[# eBSP_VERTEX.NORMAL_Z, _cpc2r2], _vertices[# eBSP_VERTEX.NORMAL_Z, _cpc2r3], _lerpi2, _lerp2, _2lil);
+                        var _cp3nz = zbsp_calc_bezier(_vertices[# eBSP_VERTEX.NORMAL_Z, _cpc3r1], _vertices[# eBSP_VERTEX.NORMAL_Z, _cpc3r2], _vertices[# eBSP_VERTEX.NORMAL_Z, _cpc3r3], _lerpi2, _lerp2, _2lil);
+                        
+                        // colour (unused since lightmap replaces the sole point of vertex colour; vertex baked lighting.)
+                        var _colour = c_white;
+                        
+                        // Interpolate between 3 control points
+                        for (var r=0; r<_levelside; r++)
+                        {
+                            var _lerp = r / _levels;
+                            var _lerpinv = 1 - _lerp;
                             
-                            // "percentage" values that goes from 0 to 1
-                            var _widlerp = _x / (_bezierw - 1);
-                            var _heilerp = _y / (_bezierh - 1);
-                            var _col = make_color_rgb(_widlerp * 255, _heilerp * 255, 128);
+                            // B = (1-t)^2 * P0 + 2(1-t)t * P1 + t^2 * P2
+                            var _lerpi2 = _lerpinv * _lerpinv;
+                            var _lerp2 = _lerp * _lerp;
+                            var _2lil = 2 * _lerpinv * _lerp;
                             
-                            vertex_position_3d(_debugVB, _vertices[# eBSP_VERTEX.X, _cvertex], _vertices[# eBSP_VERTEX.Y, _cvertex], _vertices[# eBSP_VERTEX.Z, _cvertex]);
+                            var _idx = r + c * _levelside;
+                            _patchvertdata[_idx, 0] = zbsp_calc_bezier(_cp1x, _cp2x, _cp3x, _lerpi2, _lerp2, _2lil); //_cp1x * _lerpi2 + _cp2x * _2lil + _cp3x * _lerp2;
+                            _patchvertdata[_idx, 1] = zbsp_calc_bezier(_cp1y, _cp2y, _cp3y, _lerpi2, _lerp2, _2lil);
+                            _patchvertdata[_idx, 2] = zbsp_calc_bezier(_cp1z, _cp2z, _cp3z, _lerpi2, _lerp2, _2lil);
                             
-                            // vertex_colour(_debugVB, _vertices[# eBSP_VERTEX.COLOUR, _cvertex], _vertices[# eBSP_VERTEX.ALPHA, _cvertex]);
-                            vertex_colour(_debugVB, _col, 1); // debug rainbow clown vomit colour
+                            _patchvertdata[_idx, 3] = zbsp_calc_bezier(_cp1lu, _cp2lu, _cp3lu, _lerpi2, _lerp2, _2lil); //_cp1lu * _lerpi2 + _cp2lu * _2lil + _cp3lu * _lerp2;
+                            _patchvertdata[_idx, 4] = zbsp_calc_bezier(_cp1lv, _cp2lv, _cp3lv, _lerpi2, _lerp2, _2lil); //_cp1lv * _lerpi2 + _cp2lv * _2lil + _cp3lv * _lerp2;
                             
-                            vertex_texcoord(_debugVB, _lmapu + _lmapusz * _vertices[# eBSP_VERTEX.LMAP_U, _cvertex], _lmapv + _lmapvsz * _vertices[# eBSP_VERTEX.LMAP_V, _cvertex]);
+                            _patchvertdata[_idx, 5] = zbsp_calc_bezier(_cp1nx, _cp2nx, _cp3nx, _lerpi2, _lerp2, _2lil); //_cp1nx * _lerpi2 + _cp2nx * _2lil + _cp3nx * _lerp2;
+                            _patchvertdata[_idx, 6] = zbsp_calc_bezier(_cp1ny, _cp2ny, _cp3ny, _lerpi2, _lerp2, _2lil); //_cp1ny * _lerpi2 + _cp2ny * _2lil + _cp3ny * _lerp2;
+                            _patchvertdata[_idx, 7] = zbsp_calc_bezier(_cp1nz, _cp2nz, _cp3nz, _lerpi2, _lerp2, _2lil); //_cp1nz * _lerpi2 + _cp2nz * _2lil + _cp3nz * _lerp2;
                             
-                            vertex_normal(_debugVB, _vertices[# eBSP_VERTEX.NORMAL_X, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Y, _cvertex], _vertices[# eBSP_VERTEX.NORMAL_Z, _cvertex]);
-                            
-                            _vertctr++;
+                            _patchvertdata[_idx, 8] = _colour;
                         }
                     }
+                    
+                    _patchverts[p] = _patchvertdata;
+                }
+                
+                // Triangulate bezier patch
+                for (var p=0; p<_patchidx; p++)
+                {
+                    _patchvertdata = _patchverts[p];
+                    
+                    // iterate through all tessellated vertexes
+                    for (var _ox=0; _ox<_levels; _ox++)
+                    {
+                        for (var _oy=0; _oy<_levels; _oy++)
+                        {
+                            // use triangulation offset LUT (_patchidxlut) for making the proccess of triangulating grids of vertices much easier
+                            for (var o=0; o<6; o++)
+                            {
+                                var _x = _ox + _patchidxlut[o, 0];
+                                var _y = _oy + _patchidxlut[o, 1];
+                                var _cvertex = _x * _levelside + _y;
+                                
+                                vertex_position_3d(_debugVB, _patchvertdata[_cvertex, 0], _patchvertdata[_cvertex, 1], _patchvertdata[_cvertex, 2]);
+                                
+                                vertex_colour(_debugVB, _patchvertdata[_cvertex, 8], 1);
+                                
+                                vertex_texcoord(_debugVB, _lmapu + _lmapusz * _patchvertdata[_cvertex, 3], _lmapv + _lmapvsz * _patchvertdata[_cvertex, 4]);
+                                
+                                vertex_normal(_debugVB, _patchvertdata[_cvertex, 5], _patchvertdata[_cvertex, 6], _patchvertdata[_cvertex, 7]);
+                                
+                                _vertctr++;
+                            }
+                            
+                        }
+                    }
+                    
                 }
                 break;
         }

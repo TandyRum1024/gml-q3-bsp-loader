@@ -6,7 +6,7 @@ var _tmp;
 var _hcos = dcos(camRotH), _hsin = dsin(camRotH);
 var _vcos = dcos(camRotV), _vsin = dsin(camRotV);
 
-// calculate camera forward vector
+// calculate camera forward vector (y-axis rotation)
 camFwdX = _vcos;
 camFwdY = 0;
 camFwdZ = -_vsin;

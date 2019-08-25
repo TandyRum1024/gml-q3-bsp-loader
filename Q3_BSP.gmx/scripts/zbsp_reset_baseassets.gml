@@ -11,8 +11,16 @@ if (_asset == -1)
     // PURGE
     directory_destroy(_assetfolder);
 }
-else
+else 
 {
-    // unzip & check if we successfully unzipped the base assets
-    return zip_unzip(_asset, _assetfolder);
+    if (file_exists(_asset))
+    {
+        // unzip & check if we successfully unzipped the base assets
+        return zip_unzip(_asset, _assetfolder);
+    }
+    else
+    {
+        show_debug_message("Asset directory not exists.. (" + _asset + ")");
+        return false;
+    }
 }

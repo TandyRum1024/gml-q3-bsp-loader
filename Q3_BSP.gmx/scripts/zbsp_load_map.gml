@@ -38,7 +38,7 @@ zbsp_helper_vars();
 // data related variables
 var bspdata = ds_map_create(); // map containing the bsp data
 var _filetype = string_delete(filename_ext(argument0), 1, 1);
-var _filename = string_copy(filename_name(argument0), 1, string_pos(".", argument0) - 1);
+var _filename = string_copy(filename_name(argument0), 1, string_pos(".", filename_name(argument0)) - 1);
 
 // setup values
 bspdata[? "success"] = true;
@@ -90,7 +90,7 @@ if (bspdata[? "has-base-asset"])
         show_debug_message("Unpacking base assets... this might take a while");
         
         // unzip & check if we successfully unzipped the base assets
-        if (!zip_unzip("hires_assets.pk3", _assetfolder))
+        if (!zip_unzip(assetdirectory, _assetfolder))
         {
             bspdata[? "has-base-asset"] = false;
         }
@@ -124,7 +124,17 @@ switch (_filetype)
         if (!directory_exists(_mapfolder + "\unzip")) directory_create(_mapfolder + "\unzip");
         
         _result |= zip_unzip(argument0, _mapfolder + "\unzip"); // unzip contents (normally map preview pictures and info)
-        _result |= zip_unzip(_mapfolder + "\unzip\" + _filename + ".pk3", _mapfolder); // unzip pk3 contents (normally bsp file and textures, etc)
+        
+        var _pk3 = file_find_first(_mapfolder + "\unzip\*.pk3", 0);
+        if (_pk3 == "")
+        {
+            _result = false;
+            show_debug_message("NO PK FILE!");
+            break;
+        }
+        file_find_close();
+        
+        _result |= zip_unzip(_mapfolder + "\unzip\" + _pk3, _mapfolder); // unzip pk3 contents (normally bsp file and textures, etc)
         _result |= file_exists(_mapfolder + "\maps\" + _filename + ".bsp");
         _bspfile = _mapfolder + "\maps\" + _filename + ".bsp";
         
@@ -165,13 +175,13 @@ if (bspdata[? "has-map-asset"])
     var _mapscriptdir = _mapfolder + "\scripts";
     if (directory_exists(_mapscriptdir))
     {
-        var _arenadir = _mapscriptdir + "\" + _filename + ".arena";
+        var _arenadir = file_find_first(_mapscriptdir + "\*.arena", 0);
         
-        if (file_exists(_arenadir))
+        if (_arenadir != "")
         {
             show_debug_message("Reading map .arena file..");
             
-            var _arenafile = file_text_open_read(_arenadir);
+            var _arenafile = file_text_open_read(_mapscriptdir + "\" + _arenadir);
             var _arenacontent = "";
             while (!file_text_eof(_arenafile))
             {
@@ -188,14 +198,15 @@ if (bspdata[? "has-map-asset"])
                     bspdata[? "meta-arena-longname"] = _content;
                 }
                 
-                // Found map's map file
+                // Found map's bsp file
                 if (string_pos("map", _ln) != 0)
                 {
                     var _quotebegin = string_pos('"', _ln);
                     var _quoteend = string_pos('"', string_delete(_ln, 1, _quotebegin));
                     var _content = string_copy(_ln, _quotebegin + 1, _quoteend - 1);
                     
-                    bspdata[? "meta-arena-map"] = _content;
+                    bspdata[? "meta-arena-map"] = _content + ".bsp";
+                    _bspfile = _mapfolder + "\maps\" + _content + ".bsp";
                 }
                 
                 // Found map's type / tag list
@@ -512,8 +523,8 @@ for (var i=0; i<bspdata[? "lightmaps-num"]; i++)
     // calculate lightmap uvs
     _lightinfos[# eBSP_LIGHTMAP.UV_MIN_X, i] = (_wx - 1) * _invsurfwid;
     _lightinfos[# eBSP_LIGHTMAP.UV_MIN_Y, i] = (_wy - 1) * _invsurfhei;
-    _lightinfos[# eBSP_LIGHTMAP.UV_MAX_X, i] = (_wx + 128 - 1) * _invsurfwid;
-    _lightinfos[# eBSP_LIGHTMAP.UV_MAX_Y, i] = (_wy + 128 - 1) * _invsurfhei;
+    _lightinfos[# eBSP_LIGHTMAP.UV_MAX_X, i] = (_wx + 127) * _invsurfwid;
+    _lightinfos[# eBSP_LIGHTMAP.UV_MAX_Y, i] = (_wy + 127) * _invsurfhei;
 }
 
 surface_reset_target();

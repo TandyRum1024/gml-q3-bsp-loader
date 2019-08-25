@@ -18,5 +18,7 @@ for (var i=0; i<_num; i++)
     ds_list_add(_data, buffer_read(argument0, buffer_s32));
 }
 
+show_debug_message(_data);
+
 argument1[? "leaffaces-num"] = _num;
 argument1[? "leaffaces-data"] = _data;

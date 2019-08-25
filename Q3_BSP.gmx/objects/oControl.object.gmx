@@ -25,16 +25,101 @@
         <arguments>
           <argument>
             <kind>1</kind>
+            <string>/// Pre BSP loading setup
+// Whether to render level with texture mapping.
+drawNoTexture = false;
+
+// Whether to render the level as leaf by leaf or face by face.
+// this applies for textured draw only
+drawLeafBatch = true;
+
+// Unpack base assets directory
+BSPAssetsDir = -1; //"testdata/pak0.pk3";
+
+// BSP directory
+BSPMapDir = -1;
+
+// Map vertex buffer
+BSPMapVB = -1;
+
+// Map leaf &amp; leaffaces &amp; faces data
+BSPMapFaces = -1;
+BSPMapLeafs = -1;
+BSPMapLeafFaces = -1;
+
+// Map loaded?
+BSPMapLoaded = false;
+BSPMustLoad = true;
+</string>
+          </argument>
+        </arguments>
+      </action>
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
             <string>/// Load base asset &amp; BSP
+viewer_load();
+/*
+if (drawNoTexture)
+{
+    zbsp_reset_baseassets(-1);
+    
+    show_debug_message("Loading map");
+    map = zbsp_load_map(BSPMapDir, -1, false, true);
+    
+    show_debug_message("Building mesh");
+    if (drawLeafBatch)
+    {
+        zbsp_vb_build_leafs_notexture(map);
+        BSPMapVB = map[? "vb-leafs"];
+    }
+    else
+    {
+        zbsp_vb_build_faces_notexture(map);
+        BSPMapVB = map[? "vb-faces"];
+    }
+}
+else
+{
+    if (BSPAssetsDir != -1)
+    {
+        show_debug_message("Loading assets");
+        zbsp_reset_baseassets(BSPAssetsDir);
+    }
+    
+    show_debug_message("Loading map");
+    map = zbsp_load_map(BSPMapDir, -1, true, true);
+    BSPMapVB = map[? "vb-faces"];
+}
 
-// Set asset directory &amp; Load map
-//zbsp_reset_baseassets("");
-map = zbsp_load_map("asylum.bsp", -1, false, false);
-zbsp_vb_build_leafs_notexture(map);
-
-drawLeafBatch = true; // draw "batched" leaf vertex buffer instead of drawing every faces of it?
-// surface_save(map[? "res-lightatlas-surf"], map[? "meta-res-dir"] + "\lightmapdump\lmap_whole.png");
-// zbsp_init();
+if (map[? "success"])
+{
+    BSPMapLoaded = true;
+    BSPMapLeafs = map[? "leafs-data"];
+    BSPMapFaces = map[? "faces-data"];
+    BSPMapLeafFaces = map[? "leaffaces-data"];
+    
+    show_debug_message("Map loading done");
+}
+else
+{
+    BSPMapLoaded = false;
+    show_debug_message("Map loading error");
+}
+*/
 </string>
           </argument>
         </arguments>
@@ -60,12 +145,24 @@ drawLeafBatch = true; // draw "batched" leaf vertex buffer instead of drawing ev
 // Initialize UI system
 iui_init();
 
+// Debug currnet leaf visualization
+debugCurrentLeaf = false;
+
 // Debug draw related
 debugDrawBbox = false; // draw bbox info
 debugDrawLvol = false; // draw lightvol info
 
 // Current lightmap selected for debug UI
 debugCurrentLightmap = 0;
+
+// Show camera up / forward vector?
+debugShowAxis = false;
+
+// Show debug panel?
+debugPanel = false;
+
+// Interpolation on/off
+debugTextureLerp = false;
 
 // PVS related
 pvsClusterCurrent = 0; // current visible cluster index. recalculate PVS when this value is different from previous one
@@ -75,9 +172,21 @@ pvsLeafsVisible = ds_list_create();
 pvsLeafsCulled = 0;
 pvsLeafCurrent = 0;
 
+pvsFacesVisible = ds_list_create();
+
+// list to store whether if we have already drawn the face
+mapFacesDrawn = -1;
+for (var i=0; i&lt;map[? "faces-num"]; i++)
+{
+    mapFacesDrawn[i] = false;
+}
+
 // Shader related
 shaderLevelLightmap = shader_get_sampler_index(shd_level, "uLightmap");
 currentLeafTintT = 0;
+
+// time
+t = 0;
 </string>
           </argument>
         </arguments>
@@ -106,6 +215,7 @@ mouseLock = false;
 
 // Begin 3D
 z3d_init();
+display_reset(8, false);
 </string>
           </argument>
         </arguments>
@@ -161,48 +271,66 @@ if (keyboard_check_pressed(ord('1')))
     
 if (keyboard_check_pressed(ord('2')))
     debugDrawLvol = !debugDrawLvol;
+    
+if (keyboard_check_pressed(ord('E')))
+    debugPanel = !debugPanel;
 
+if (keyboard_check_pressed(ord('R')))
+    debugCurrentLeaf = !debugCurrentLeaf;
+    
+if (keyboard_check_pressed(ord('T')))
+    debugShowAxis = !debugShowAxis;
+
+if (keyboard_check_pressed(ord('I')))
+    debugTextureLerp = !debugTextureLerp;
+    
 if (keyboard_check_pressed(ord('L')))
 {
     mouseLock = !mouseLock;
     window_mouse_set(_scrw * 0.5, _scrh * 0.5);
 }
 
-if (mouseLock)
+if (BSPMapLoaded)
 {
-    var _dx = window_mouse_get_x() - (_scrw * 0.5);
-    var _dy = window_mouse_get_y() - (_scrh * 0.5);
-    camRotH += _dx * mouseSensitivity;
-    camRotV += _dy * mouseSensitivity;
-    camTilt += _dx * mouseSensitivity * 0.2;
-    window_mouse_set(_scrw * 0.5, _scrh * 0.5);
-    
-    z3d_update_vectors();
-    
-    // move camera
-    var _inputfwd = keyboard_check(ord('W')) - keyboard_check(ord('S'));
-    var _inputside = keyboard_check(ord('D')) - keyboard_check(ord('A'));
-    if (_inputfwd != 0 || _inputside != 0)
+    if (mouseLock)
     {
-        var _wishdirx = camFwdX * _inputfwd - dsin(camRotH) * _inputside;
-        var _wishdiry = camFwdY * _inputfwd + dcos(camRotH) * _inputside;
-        var _wishdirz = camFwdZ * _inputfwd;
+        var _dx = window_mouse_get_x() - (_scrw * 0.5);
+        var _dy = window_mouse_get_y() - (_scrh * 0.5);
+        camRotH += _dx * mouseSensitivity;
+        camRotV += _dy * mouseSensitivity;
+        camTilt += _dx * mouseSensitivity * 0.2;
+        window_mouse_set(_scrw * 0.5, _scrh * 0.5);
         
-        z3d_accelerate(0.25, 6, _wishdirx, _wishdiry, _wishdirz);
+        z3d_update_vectors();
+        
+        // move camera
+        var _inputfwd = keyboard_check(ord('W')) - keyboard_check(ord('S'));
+        var _inputside = keyboard_check(ord('D')) - keyboard_check(ord('A'));
+        if (_inputfwd != 0 || _inputside != 0)
+        {
+            var _wishdirx = camFwdX * _inputfwd - dsin(camRotH) * _inputside;
+            var _wishdiry = camFwdY * _inputfwd + dcos(camRotH) * _inputside;
+            var _wishdirz = camFwdZ * _inputfwd;
+            
+            z3d_accelerate(0.25, 6, _wishdirx, _wishdiry, _wishdirz);
+        }
+        
+        camTilt += _inputside * 0.5;
     }
-}
-else
-{
-    z3d_update_vectors();
+    else
+    {
+        z3d_update_vectors();
+    }
+    
+    camX += camVX;
+    camY += camVY;
+    camZ += camVZ;
+    camTilt = lerp(camTilt, 0, 0.08);
+    camVX *= 0.95;
+    camVY *= 0.95;
+    camVZ *= 0.95;
 }
 
-camX += camVX;
-camY += camVY;
-camZ += camVZ;
-camTilt = lerp(camTilt, 0, 0.08);
-camVX *= 0.95;
-camVY *= 0.95;
-camVZ *= 0.95;
 iui_update_io();
 </string>
           </argument>
@@ -225,20 +353,89 @@ iui_update_io();
           <argument>
             <kind>1</kind>
             <string>/// Update PVS &amp; Cull invisible leaf
-var _leafs = map[? "leafs-data"];
-
-// Get current leaf index
-pvsLeafCurrent = zbsp_get_leaf_idx(map, camX, camY, camZ);
-
-// fetch visible cluster index
-pvsClusterPrevious = pvsClusterCurrent;
-pvsClusterCurrent = _leafs[# eBSP_LEAF.VISCLUSTER, pvsLeafCurrent];
-
-/// Calculate PVS if we're in different visible cluster from previous frame
-if (pvsClusterPrevious != pvsClusterCurrent)
+if (BSPMapLoaded)
 {
-    pvsLeafsCulled = zbsp_get_visible_leafs(map, pvsLeafsVisible, pvsClusterCurrent);
+    // Get current leaf index
+    pvsLeafCurrent = zbsp_get_leaf_idx(map, camX, camY, camZ);
+    
+    // fetch visible cluster index
+    pvsClusterPrevious = pvsClusterCurrent;
+    pvsClusterCurrent = BSPMapLeafs[# eBSP_LEAF.VISCLUSTER, pvsLeafCurrent];
+    
+    /// Calculate PVS if we're in different visible cluster from previous frame
+    if (pvsClusterPrevious != pvsClusterCurrent)
+    {
+        show_debug_message("CALC PVS");
+        
+        pvsLeafsCulled = zbsp_get_visible_leafs(map, pvsLeafsVisible, pvsClusterCurrent);
+        
+        // clear out visible faces
+        for (var i=0; i&lt;ds_list_size(pvsFacesVisible); i++)
+        {
+            var _faceidx = pvsFacesVisible[| i];
+            mapFacesDrawn[@ _faceidx] = false;
+        }
+        
+        ds_list_clear(pvsFacesVisible);
+        
+        for (var l=0; l&lt;ds_list_size(pvsLeafsVisible); l++)
+        {
+            var _currentleaf = pvsLeafsVisible[| l];
+            var _lfidx = BSPMapLeafs[# eBSP_LEAF.LEAFFACE_IDX, _currentleaf];
+            var _lfnum = BSPMapLeafs[# eBSP_LEAF.LEAFFACE_NUM, _currentleaf];
+            
+            for (var i=0; i&lt;_lfnum; i++)
+            {
+                var _faceidx = BSPMapLeafFaces[| _lfidx + i];
+                if (!mapFacesDrawn[@ _faceidx])
+                {
+                    ds_list_add(pvsFacesVisible, _faceidx);
+                    mapFacesDrawn[@ _faceidx] = true;
+                }
+            }
+        }
+    }
 }
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+    <event eventtype="8" enumb="76">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>/// Load BSP
+d3d_end();
+d3d_set_projection_ortho(0, 0, room_width, room_height, 0);
+display_reset(0, false);
+
+texture_set_interpolation(false);
+
+if (BSPMustLoad)
+{
+    viewer_reload();
+    BSPAssetsDir = -1;
+    BSPMustLoad = false;
+}
+
+texture_set_interpolation(true);
+
+display_reset(8, false);
+d3d_start();
 </string>
           </argument>
         </arguments>
@@ -262,155 +459,138 @@ if (pvsClusterPrevious != pvsClusterCurrent)
           <argument>
             <kind>1</kind>
             <string>/// Draw UI
+t++;
+
 var _scrw = window_get_width(), _scrh = window_get_height();
 var _tophei = 160;
-var _topmarginy = 50;
+var _topmarginy = 35;
 
 draw_set_font(fntMain16);
 iui_begin();
 
-iui_rect(0, 0, _scrw, _tophei, iuHellaDark);
-ui_tabidx = iui_tab(0, 0, 80, 30, pack("MAP", "INFO", "DIRENTRY", "LUMPS", "LMAP", "TEX"), ui_tabidx, 2);
-
-switch (ui_tabidx)
+if (!BSPMapLoaded)
 {
-    case 0:
-        iui_label_shadow(10, _topmarginy, "FILENAME : " + map[? "meta-filename"], iuCream, 0, 1, c_black);
-        iui_label_shadow(10, _topmarginy + 20, "FILETYPE : " + map[? "meta-filetype"], iuCream, 0, 1, c_black);
-        iui_label_shadow(10, _topmarginy + 40, "MAP NAME : " + map[? "meta-map-name"], iuCream, 0, 1, c_black);
-        iui_label_shadow(10, _topmarginy + 60, "SUCCESS : " + string(map[? "success"]) + " | " + map[? "error"], iuCream, 0, 1, c_black);
-        break;
-        
-    case 1:
-        iui_label_shadow(10, _topmarginy, "LEAF : " + string(ds_list_size(pvsLeafsVisible)), iuCream, 0, 1, c_black);
-        iui_label_shadow(10, _topmarginy + 20, "LEAF CULLED : " + string(pvsLeafsCulled), iuCream, 0, 1, c_black);
-        iui_label_shadow(10, _topmarginy + 40, "CURRENT CLUSTER : " + string(pvsClusterCurrent), iuCream, 0, 1, c_black);
-        break;
-        
-    case 2:
-        iui_rect(0, _tophei, _scrw, _scrh - _tophei, iuHellaDark);
-        
-        var _off = 0;
-        for (var i=0; i&lt;array_length_1d(global.BSPLumpNames); i++)
-        {
-            iui_label_shadow(10, _topmarginy + _off, "OFFSET : " + string(map[? global.BSPLumpNames[@i] + "-diroff"]), iuCream, 0, 1, c_black);
-            iui_label_shadow(10, _topmarginy + _off + 20, "LENGTH : " + string(map[? global.BSPLumpNames[@i] + "-dirlen"]), iuCream, 0, 1, c_black);
-            _off += 40;
-        }
-        break;
-        
-    case 3:
-        iui_rect(0, _tophei, _scrw, _scrh - _tophei, iuHellaDark);
-        
-        _topmarginy += 30;
-        
-        draw_set_font(fntMain8);
-        ui_lumptabidx = iui_tab(0, 30, 64, 30, global.BSPLumpNames, ui_lumptabidx, 1);
-        draw_set_font(fntMain16);
-        
-        switch (ui_lumptabidx)
-        {
-            case eBSP_LUMP.ENTITIES:
-                var _drawtext = trim_text_lines(map[? "entities"], ui_entitiesscroll, ui_entitiesscroll + 20);
-                if (mouse_wheel_up()) ui_entitiesscroll = max(0, ui_entitiesscroll - 1);
-                if (mouse_wheel_down()) ui_entitiesscroll++;
-                
-                iui_label_shadow(10, _topmarginy, _drawtext, iuCream, 0, 1, c_black);
-                break;
-                
-            case eBSP_LUMP.TEXTURES:
-                var _textures = map[? "textures-data"];
-                var _maptextures = map[? "meta-res-tex-dir"];
-                
-                iui_label_shadow(10, _topmarginy, string(map[? "textures-num"]) + " TEXTURES NEEDED", iuCream, 0, 1, c_black);
-                draw_set_font(fntMain8);
-                for (var i=0; i&lt;map[? "textures-num"]; i++)
-                {
-                    iui_label_shadow(10, _topmarginy + 30 + 10 * i, _textures[# 0, i], iuCream, 0, 1, c_black);
-                }
-                draw_set_font(fntMain16);
-                
-                iui_label_shadow(_scrw * 0.5 + 10, _topmarginy, string(ds_list_size(_maptextures)) + " MAP TEXTURES FOUND", iuCream, 0, 1, c_black);
-                draw_set_font(fntMain8);
-                for (var i=0; i&lt;ds_list_size(_maptextures); i++)
-                {
-                    iui_label_shadow(_scrw * 0.5 + 10, _topmarginy + 30 + 10 * i, _maptextures[| i], iuCream, 0, 1, c_black);
-                }
-                draw_set_font(fntMain16);
-                break;
-                
-            case eBSP_LUMP.PLANES:
-                var _planes = map[? "planes-data"];
-                
-                iui_label_shadow(10, _topmarginy, string(map[? "planes-num"]) + " PLANES", iuCream, 0, 1, c_black);
-                
-                draw_set_font(fntMain8);
-                for (var i=0; i&lt;map[? "planes-num"]; i++)
-                {
-                    iui_label_shadow(10, _topmarginy + 30 + 10 * i, string(_planes[# 0, i]) + ", " + string(_planes[# 1, i]) + ", " + string(_planes[# 2, i]) + " | " + string(_planes[# 3, i]), iuCream, 0, 1, c_black);
-                }
-                draw_set_font(fntMain16);
-                break;
-        }
-        break;
-        
-    case 4:
-        if (keyboard_check_pressed(vk_right))
-        {
-            debugCurrentLightmap = (debugCurrentLightmap + 1) % map[? "lightmaps-num"];
-        }
-        if (keyboard_check_pressed(vk_left))
-        {
-            debugCurrentLightmap = (debugCurrentLightmap + map[? "lightmaps-num"] - 1) % map[? "lightmaps-num"];
-        }
+    var _cx = _scrw * 0.5, _cy = _scrh * 0.5;
+    draw_clear(iuDark);
+    draw_sprite_ext(sprShrug, 0, _cx, _cy, 1, 1, 0, c_white, 1);
+    draw_sprite_ext(sprShrug, 1, _cx, _cy - (sin(t * 0.05) * 0.5 + 0.5) * 16, 1, 1, sin(t * 0.025) * 2, c_white, 1);
     
-        var _cx = _scrw * 0.5, _cy = _scrh * 0.5;
-        iui_rect(0, _tophei, _scrw, _scrh - _tophei, iuHellaDark);
-        //draw_surface_stretched(map[? "res-lightatlas-surf"], _cx - 300, _cy - 300, 600, 600);
-        draw_sprite_stretched(map[? "res-lightatlas-spr"], 0, _cx - 300, _cy - 300, 600, 600);
-        
-        var _lightmaps = map[? "lightmaps-data"];
-        var _lightmapspr = map[? "lightmaps-sprites"];
-        var _lx1 = _lightmaps[# 1, debugCurrentLightmap] * 600;
-        var _ly1 = _lightmaps[# 2, debugCurrentLightmap] * 600;
-        var _lx2 = _lightmaps[# 3, debugCurrentLightmap] * 600;
-        var _ly2 = _lightmaps[# 4, debugCurrentLightmap] * 600;
-        
-        iui_rect_pos(_cx - 300 + _lx1, _cy - 300 + _ly1, _cx - 300 + _lx2, _cy - 300 + _ly2, c_red, 0.5);
-        //draw_sprite(_lightmapspr[| debugCurrentLightmap], 0, _cx - 300 + _lx1, _cy - 300 + _ly1);
-        
-        iui_align_push(1, 2);
-        iui_label_shadow(_cx, _scrh - 10, "LIGHTMAP : " + string(debugCurrentLightmap), c_yellow, 0, 1, c_black);
-        iui_align_pop();
-        break;
-        
-    case 5:
-        var _cx = _scrw * 0.5, _cy = _scrh * 0.5;
-        iui_rect(0, _tophei, _scrw, _scrh - _tophei, iuHellaDark);
-        
-        var _textures = map[? "textures-sprites"];
-        var _drawx = 0;
-        var _drawy = _tophei;
-        var _maxh = 0;
-        
-        for (var i=0; i&lt;ds_list_size(_textures); i++)
-        {
-            var _spr = _textures[| i];
-            var _sprw = sprite_get_width(_spr), _sprh = sprite_get_height(_spr);
-            var _sprratio = 64 / _sprw;
+    iui_align_push(1, 1);
+    iui_label_shadow(_cx, _cy + 140, "Darn!", iuPiss, 0, 1, c_black);
+    iui_label_shadow(_cx, _cy + 180, "Looks like you didn't load any map or something went wrong...#Press &lt;E&gt; to show debug menu and load the map!", iuCream, 0, 1, c_black);
+    iui_align_pop();
+}
+
+if (debugPanel)
+{
+    iui_rect(0, 0, _scrw, _tophei, iuHellaDark);
+    
+    if (BSPMapLoaded)
+        ui_tabidx = iui_tab(0, 0, 80, 30, pack("HELLO", "MAP", "PVS", "LMAP", "TEX"), ui_tabidx, 2);
+    else
+        ui_tabidx = iui_tab(0, 0, 80, 30, pack("HELLO"), ui_tabidx, 2);
+    
+    switch (ui_tabidx)
+    {
+        default:
+        case 0:
+            iui_align_push(1, 0);
+            iui_label_shadow(_scrw * 0.5, _topmarginy, "BSP MAP VIEWER v1", iuCream, 0, 1, c_black);
+            iui_label_shadow(_scrw * 0.5, _topmarginy + 20, "&lt;R&gt; : visualize current leaf#&lt;T&gt; : show axis info | &lt;I&gt; : Toggle lightmap filter#&lt;1&gt; : show leaf bbox | &lt;2&gt; : show lightvolume", iuCream, 0, 1, c_black);
+            iui_align_pop();
+            iui_align_push(2, 2);
+            iui_label_shadow(_scrw, _tophei, "MMXIX ZIK", iuPiss, 0, 1, c_black);
+            iui_align_pop();
             
-            draw_sprite_stretched(_spr, 0, _drawx, _drawy, _sprw * _sprratio, _sprh * _sprratio);
-            _drawx += 64;
-            _maxh = max(_maxh, _sprh * _sprratio);
-            
-            if (_drawx &gt; _scrw)
+            var _mustload = false;
+            if (iui_button(10, _topmarginy + 20, 150, 32, "LOAD MAP"))
             {
-                _drawy += _maxh + 2;
-                _drawx = 0;
-                _maxh = 0;
+                BSPMapDir = get_open_filename_ext("Quake 3 BSP maps|*.bsp|Quake 3 BSP zip/pk3 maps|*.zip;*.pk3", "", "", "Time to open a map file...");
+                BSPMustLoad = true;
+                
+                camX = 0;
+                camY = 0;
+                camZ = 0;
             }
-        }
-        break;
+            
+            if (iui_button(10, _topmarginy + 60, 150, 32, "LOAD ASSETS"))
+            {
+                BSPAssetsDir = get_open_filename_ext("Quake 3 assets|*.pk3", "", "", "Time to open a assets file...");
+                BSPMustLoad = true;
+            }
+            break;
+            
+        case 1:
+            iui_label_shadow(10, _topmarginy, "FILENAME : " + map[? "meta-filename"], iuCream, 0, 1, c_black);
+            iui_label_shadow(10, _topmarginy + 20, "FILETYPE : " + map[? "meta-filetype"], iuCream, 0, 1, c_black);
+            iui_label_shadow(10, _topmarginy + 40, "MAP NAME : " + map[? "meta-map-name"], iuCream, 0, 1, c_black);
+            iui_label_shadow(10, _topmarginy + 60, "SUCCESS : " + string(map[? "success"]) + "#ERROR : " + map[? "error"], iuCream, 0, 1, c_black);
+            break;
+            
+        case 2:
+            iui_label_shadow(10, _topmarginy, "LEAF : " + string(ds_list_size(pvsLeafsVisible)), iuCream, 0, 1, c_black);
+            iui_label_shadow(10, _topmarginy + 20, "LEAF CULLED : " + string(pvsLeafsCulled), iuCream, 0, 1, c_black);
+            iui_label_shadow(10, _topmarginy + 40, "CURRENT CLUSTER : " + string(pvsClusterCurrent), iuCream, 0, 1, c_black);
+            break;
+    
+        case 3:
+            if (keyboard_check_pressed(vk_right))
+            {
+                debugCurrentLightmap = (debugCurrentLightmap + 1) % map[? "lightmaps-num"];
+            }
+            if (keyboard_check_pressed(vk_left))
+            {
+                debugCurrentLightmap = (debugCurrentLightmap + map[? "lightmaps-num"] - 1) % map[? "lightmaps-num"];
+            }
+        
+            var _cx = _scrw * 0.5, _cy = _scrh * 0.5;
+            iui_rect(0, _tophei, _scrw, _scrh - _tophei, iuHellaDark);
+            //draw_surface_stretched(map[? "res-lightatlas-surf"], _cx - 300, _cy - 300, 600, 600);
+            draw_sprite_stretched(map[? "res-lightatlas-spr"], 0, _cx - 300, _cy - 300, 600, 600);
+            
+            var _lightmaps = map[? "lightmaps-data"];
+            var _lightmapspr = map[? "lightmaps-sprites"];
+            var _lx1 = _lightmaps[# 1, debugCurrentLightmap] * 600;
+            var _ly1 = _lightmaps[# 2, debugCurrentLightmap] * 600;
+            var _lx2 = _lightmaps[# 3, debugCurrentLightmap] * 600;
+            var _ly2 = _lightmaps[# 4, debugCurrentLightmap] * 600;
+            
+            iui_rect_pos(_cx - 300 + _lx1, _cy - 300 + _ly1, _cx - 300 + _lx2, _cy - 300 + _ly2, c_red, 0.5);
+            //draw_sprite(_lightmapspr[| debugCurrentLightmap], 0, _cx - 300 + _lx1, _cy - 300 + _ly1);
+            
+            iui_align_push(1, 2);
+            iui_label_shadow(_cx, _scrh - 10, "(LEFT/RIGHT ARROW TO CYCLE LIGHTMAP)#LIGHTMAP : " + string(debugCurrentLightmap), c_yellow, 0, 1, c_black);
+            iui_align_pop();
+            break;
+            
+        case 4:
+            var _cx = _scrw * 0.5, _cy = _scrh * 0.5;
+            iui_rect(0, _tophei, _scrw, _scrh - _tophei, iuHellaDark);
+            
+            var _textures = map[? "textures-sprites"];
+            var _drawx = 0;
+            var _drawy = _tophei;
+            var _maxh = 0;
+            
+            for (var i=0; i&lt;ds_list_size(_textures); i++)
+            {
+                var _spr = _textures[| i];
+                var _sprw = sprite_get_width(_spr), _sprh = sprite_get_height(_spr);
+                var _sprratio = 64 / _sprw;
+                
+                draw_sprite_stretched(_spr, 0, _drawx, _drawy, _sprw * _sprratio, _sprh * _sprratio);
+                _drawx += 64;
+                _maxh = max(_maxh, _sprh * _sprratio);
+                
+                if (_drawx &gt; _scrw)
+                {
+                    _drawy += _maxh + 2;
+                    _drawx = 0;
+                    _maxh = 0;
+                }
+            }
+            break;
+    }
 }
 
 draw_set_font(fntMain16);
@@ -431,9 +611,20 @@ iui_align_pop();
 
 iui_end();
 
-var _amp = 64;
-draw_line_color(_scrw * 0.5, _scrh * 0.5, _scrw * 0.5 + camFwdY * _amp, _scrh * 0.5 + camFwdZ * _amp, c_red, c_red);
-draw_line_color(_scrw * 0.5, _scrh * 0.5, _scrw * 0.5 + camUpY * _amp, _scrh * 0.5 + camUpZ * _amp, c_blue, c_blue);
+if (debugShowAxis)
+{
+    var _amp = 64;
+    draw_line_color(_scrw * 0.5, _scrh * 0.5, _scrw * 0.5 + camFwdY * _amp, _scrh * 0.5 + camFwdZ * _amp, c_red, c_red);
+    draw_line_color(_scrw * 0.5, _scrh * 0.5, _scrw * 0.5 + camUpY * _amp, _scrh * 0.5 + camUpZ * _amp, c_blue, c_blue);
+}
+
+iui_align_push(2, 0);
+var _str = "FPS : " + string(fps_real) + "#&lt;L&gt; : enable mouselook#&lt;E&gt; : toggle debug menu";
+
+var _wid = string_width(_str), _hei = string_height(_str);
+iui_rect_pos(_scrw - _wid, 0, _scrw, _hei, $FF00FF, 1);
+iui_label_shadow(_scrw, 0, _str, c_white, 0, 1, c_black);
+iui_align_pop();
 </string>
           </argument>
         </arguments>
@@ -479,102 +670,135 @@ d3d_set_projection_ext(camX, camY, camZ, camX + camFwdX, camY + camFwdY, camZ + 
           <argument>
             <kind>1</kind>
             <string>/// Draw vertex buffers
-currentLeafTintT++;
-
-var _leafs = map[? "leafs-data"];
-var _leaffaces = map[? "leaffaces-data"];
-var _faces = map[? "faces-data"];
-
-var _vertexbuffers = map[? "vb-faces"];
-var _textures = map[? "textures-list"];
-
-// Draw level
-if (map[? "has-map-asset"] &amp;&amp; !drawLeafBatch)
+if (BSPMapLoaded)
 {
+    currentLeafTintT++;
+    
+    // Draw level
     texture_set_repeat(true);
-    texture_set_interpolation(true);
-    
-    shader_set(shd_level);
-    texture_set_stage(shaderLevelLightmap, map[? "res-lightatlas-tex"]);
-    
-    for (var i=0; i&lt;ds_list_size(pvsLeafsVisible); i++)
-    {
-        var _currentleaf = pvsLeafsVisible[| i];
-        var _lfidx = _leafs[# eBSP_LEAF.LEAFFACE_IDX, _currentleaf];
-        var _lfnum = _leafs[# eBSP_LEAF.LEAFFACE_NUM, _currentleaf];
+    texture_set_interpolation(debugTextureLerp);
         
-        for (var j=0; j&lt;_lfnum; j++)
-        {
-            var _faceidx = _leaffaces[| _lfidx + j];
-            
-            var _texidx = _faces[# eBSP_FACE.TEXTURE, _faceidx];
-            var _vb = _vertexbuffers[| _faceidx];
-            
-            vertex_submit(_vb, pr_trianglelist, _textures[| _texidx]);
-        }
-    }
-    
-    shader_reset();
-    
-    texture_set_interpolation(false);
-    texture_set_repeat(false);
-}
-else
-{
-    texture_set_repeat(true);
-    texture_set_interpolation(true);
-
-    shader_set(shd_level_notex);
-    
-    var _uTint = shader_get_uniform(shd_level_notex, "uTint");
-    
-    if (drawLeafBatch)
+    if (!drawNoTexture)
     {
-        _vertexbuffers = map[? "vb-leafs"];
+        var _textures = map[? "textures-list"];
+        
+        shader_set(shd_level);
+        
+        // Set lightmap texture for shader
+        texture_set_stage(shaderLevelLightmap, map[? "res-lightatlas-tex"]);
+        
+        // Reset tint
+        var _uTint = shader_get_uniform(shd_level, "uTint");
         shader_set_uniform_f(_uTint, 1, 1, 1);
         
-        for (var i=0; i&lt;ds_list_size(pvsLeafsVisible); i++)
-        {   
-            var _vb = _vertexbuffers[| i];
-            vertex_submit(_vb, pr_trianglelist, map[? "res-lightatlas-tex"]);
+        // Draw all visible faces
+        for (var i=0; i&lt;ds_list_size(pvsFacesVisible); i++)
+        {
+            var _faceidx = pvsFacesVisible[| i];
+            var _texidx = BSPMapFaces[# eBSP_FACE.TEXTURE, _faceidx];
+            vertex_submit(BSPMapVB[| _faceidx], pr_trianglelist, _textures[| _texidx]);
         }
         
-        var _vb = _vertexbuffers[| pvsLeafCurrent];
-        var _rainbow = make_colour_hsv(currentLeafTintT * 2, 232, 255);
-        
-        shader_set_uniform_f(_uTint, (_rainbow &amp; $FF) / 255, ((_rainbow &amp; $FF00) &gt;&gt; 8) / 255, ((_rainbow &amp; $FF0000) &gt;&gt; 16) / 255);
-        vertex_submit(_vb, pr_trianglelist, map[? "res-lightatlas-tex"]);
-    }
-    else
-    {
-        for (var i=0; i&lt;ds_list_size(pvsLeafsVisible); i++)
+        // And draw current leaf (with clown vomit-like rainbow colour) if needed
+        if (debugCurrentLeaf)
         {
-            var _currentleaf = pvsLeafsVisible[| i];
-            var _lfidx = _leafs[# eBSP_LEAF.LEAFFACE_IDX, _currentleaf];
-            var _lfnum = _leafs[# eBSP_LEAF.LEAFFACE_NUM, _currentleaf];
+            var _rainbow = make_colour_hsv(currentLeafTintT * 2, 232, 255);
+            shader_set_uniform_f(_uTint, (_rainbow &amp; $FF) / 255, ((_rainbow &amp; $FF00) &gt;&gt; 8) / 255, ((_rainbow &amp; $FF0000) &gt;&gt; 16) / 255);
+            
+            var _currentleaf = pvsLeafCurrent;
+            var _lfidx = BSPMapLeafs[# eBSP_LEAF.LEAFFACE_IDX, _currentleaf];
+            var _lfnum = BSPMapLeafs[# eBSP_LEAF.LEAFFACE_NUM, _currentleaf];
             
             for (var j=0; j&lt;_lfnum; j++)
             {
-                var _faceidx = _leaffaces[| _lfidx + j];
-                var _vb = _vertexbuffers[| _faceidx];
+                var _faceidx = BSPMapLeafFaces[| _lfidx + j];
                 
+                var _texidx = BSPMapFaces[# eBSP_FACE.TEXTURE, _faceidx];
+                var _vb = BSPMapVB[| _faceidx];
+                
+                vertex_submit(_vb, pr_trianglelist, _textures[| _texidx]);
+            }
+        }
+        shader_reset();
+    }
+    else
+    {
+        shader_set(shd_level_notex);
+        
+        // Set lightmap texture for shader
+        var _uTint = shader_get_uniform(shd_level_notex, "uTint");
+        
+        if (drawLeafBatch)
+        {
+            // Set lightmap texture for shader
+            shader_set_uniform_f(_uTint, 1, 1, 1);
+            
+            // Draw all visible leafs
+            for (var i=0; i&lt;ds_list_size(pvsLeafsVisible); i++)
+            {   
+                var _currentleaf = pvsLeafsVisible[| i];
+                var _vb = BSPMapVB[| _currentleaf];
+                vertex_submit(_vb, pr_trianglelist, map[? "res-lightatlas-tex"]);
+            }
+            
+            // And draw current leaf (with clown vomit-like rainbow colour) if needed
+            if (debugCurrentLeaf)
+            {
+                var _vb = BSPMapVB[| pvsLeafCurrent];
+                var _rainbow = make_colour_hsv(currentLeafTintT * 2, 232, 255);
+                shader_set_uniform_f(_uTint, (_rainbow &amp; $FF) / 255, ((_rainbow &amp; $FF00) &gt;&gt; 8) / 255, ((_rainbow &amp; $FF0000) &gt;&gt; 16) / 255);
                 vertex_submit(_vb, pr_trianglelist, map[? "res-lightatlas-tex"]);
             }
         }
+        else
+        {
+            shader_set_uniform_f(_uTint, 1, 1, 1);
+        
+            for (var i=0; i&lt;ds_list_size(pvsFacesVisible); i++)
+            {
+                var _faceidx = pvsFacesVisible[| i];
+                
+                var _texidx = BSPMapFaces[# eBSP_FACE.TEXTURE, _faceidx];
+                var _vb = BSPMapVB[| _faceidx];
+                
+                vertex_submit(_vb, pr_trianglelist, map[? "res-lightatlas-tex"]);
+            }
+            
+            // And draw current leaf (with clown vomit-like rainbow colour) if needed
+            if (debugCurrentLeaf)
+            {
+                var _rainbow = make_colour_hsv(currentLeafTintT * 2, 232, 255);
+                shader_set_uniform_f(_uTint, (_rainbow &amp; $FF) / 255, ((_rainbow &amp; $FF00) &gt;&gt; 8) / 255, ((_rainbow &amp; $FF0000) &gt;&gt; 16) / 255);
+                
+                var _currentleaf = pvsLeafCurrent;
+                var _lfidx = BSPMapLeafs[# eBSP_LEAF.LEAFFACE_IDX, _currentleaf];
+                var _lfnum = BSPMapLeafs[# eBSP_LEAF.LEAFFACE_NUM, _currentleaf];
+                
+                for (var j=0; j&lt;_lfnum; j++)
+                {
+                    var _faceidx = BSPMapLeafFaces[| _lfidx + j];
+                    
+                    var _texidx = BSPMapFaces[# eBSP_FACE.TEXTURE, _faceidx];
+                    var _vb = BSPMapVB[| _faceidx];
+                    
+                    vertex_submit(_vb, pr_trianglelist, map[? "res-lightatlas-tex"]);
+                }
+            }
+        }
+        
+        shader_reset();
     }
     
-    shader_reset();
-    
-    texture_set_interpolation(false);
+    texture_set_interpolation(true);
     texture_set_repeat(false);
+    
+    // Draw debug stuff
+    if (debugDrawBbox)
+        vertex_submit(map[? "vb-debug-bbox"], pr_linelist, -1);
+    
+    if (debugDrawLvol)
+        vertex_submit(map[? "vb-debug-lightvol"], pr_trianglelist, -1);
 }
-
-// Draw debug stuff
-if (debugDrawBbox)
-    vertex_submit(map[? "vb-debug-bbox"], pr_linelist, -1);
-
-if (debugDrawLvol)
-    vertex_submit(map[? "vb-debug-lightvol"], pr_trianglelist, -1);
 </string>
           </argument>
         </arguments>

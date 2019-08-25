@@ -16,4 +16,4 @@ var _nz = _dx1 * _dy2 - _dy1 * _dx2;
 var _mag = 1 / sqrt(_nx * _nx + _ny * _ny + _nz * _nz);
 _nx *= _mag; _ny *= _mag; _nz *= _mag;
 
-return dot_product_3d(_lx, _ly, _lz, _nx, _ny, _nz) * 0.5 + 0.5;
+return dot_product_3d(_nx, _ny, _nz, _lx, _ly, _lz) * 0.5 + 0.5;
