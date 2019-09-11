@@ -14,6 +14,7 @@
     <sprite>sprites\sprNotexture</sprite>
     <sprite>sprites\sprShrug</sprite>
     <sprite>sprites\spr_uicheck</sprite>
+    <sprite>sprites\sprDenyed</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
@@ -43,6 +44,7 @@
         <script>scripts\zbsp_read_str.gml</script>
         <script>scripts\zbsp_calc_lightdot.gml</script>
         <script>scripts\zbsp_calc_bezier.gml</script>
+        <script>scripts\zbsp_calc_bilinear.gml</script>
       </scripts>
       <scripts name="LUMPS">
         <script>scripts\zbsp_load_lump_entities.gml</script>
@@ -119,6 +121,7 @@
   <shaders name="shaders">
     <shader type="GLSLES">shaders\shd_level.shader</shader>
     <shader type="GLSLES">shaders\shd_level_notex.shader</shader>
+    <shader type="GLSLES">shaders\shd_model.shader</shader>
   </shaders>
   <fonts name="fonts">
     <font>fonts\fntMain16</font>
@@ -126,6 +129,8 @@
   </fonts>
   <objects name="objects">
     <object>objects\oControl</object>
+    <object>objects\oModelHandler</object>
+    <object>objects\oBillboard</object>
   </objects>
   <rooms name="rooms">
     <room>rooms\room0</room>

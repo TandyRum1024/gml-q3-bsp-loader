@@ -534,6 +534,23 @@ bspdata[? "res-lightatlas-spr"] = sprite_create_from_surface(_lmapsurf, 0, 0, _s
 bspdata[? "res-lightatlas-tex"] = sprite_get_texture(bspdata[? "res-lightatlas-spr"], 0);
 
 // ==================================================================
+/// Calculate lightvolume dimension
+// ==================================================================
+var _models = bspdata[? "models-data"];
+var _lightvolcellsizeh = 64; // cell size of lightvol grid in x-y axis (constant)
+var _lightvolcellsizev = 128; // cell size of lightvol grid in z axis (constant)
+var _lightvolnx = floor(_models[# eBSP_MODEL.BBOX_MAX_X, 0] / _lightvolcellsizeh) - ceil(_models[# eBSP_MODEL.BBOX_MIN_X, 0] / _lightvolcellsizeh) + 1;
+var _lightvolny = floor(_models[# eBSP_MODEL.BBOX_MAX_Y, 0] / _lightvolcellsizeh) - ceil(_models[# eBSP_MODEL.BBOX_MIN_Y, 0] / _lightvolcellsizeh) + 1;
+var _lightvolnz = floor(_models[# eBSP_MODEL.BBOX_MAX_Z, 0] / _lightvolcellsizev) - ceil(_models[# eBSP_MODEL.BBOX_MIN_Z, 0] / _lightvolcellsizev) + 1;
+    
+bspdata[? "lightvols-size-x"] = _lightvolnx;
+bspdata[? "lightvols-size-y"] = _lightvolny;
+bspdata[? "lightvols-size-z"] = _lightvolnz;
+bspdata[? "lightvols-off-x"] = _models[# eBSP_MODEL.BBOX_MIN_X, 0];
+bspdata[? "lightvols-off-y"] = _models[# eBSP_MODEL.BBOX_MIN_Y, 0];
+bspdata[? "lightvols-off-z"] = _models[# eBSP_MODEL.BBOX_MIN_Z, 0];
+
+// ==================================================================
 /// Build debug vertex buffer / meshses
 // ==================================================================
 if (builddebugmesh)
@@ -561,9 +578,9 @@ if (builddebugmesh)
     
     var _lightvolcellsizeh = 64; // cell size of lightvol grid in x-y axis (constant)
     var _lightvolcellsizev = 128; // cell size of lightvol grid in z axis (constant)
-    var _lightvolnx = floor(_models[# eBSP_MODEL.BBOX_MAX_X, 0] / _lightvolcellsizeh) - ceil(_models[# eBSP_MODEL.BBOX_MIN_X, 0] / _lightvolcellsizeh) + 1;
-    var _lightvolny = floor(_models[# eBSP_MODEL.BBOX_MAX_Y, 0] / _lightvolcellsizeh) - ceil(_models[# eBSP_MODEL.BBOX_MIN_Y, 0] / _lightvolcellsizeh) + 1;
-    var _lightvolnz = floor(_models[# eBSP_MODEL.BBOX_MAX_Z, 0] / _lightvolcellsizev) - ceil(_models[# eBSP_MODEL.BBOX_MIN_Z, 0] / _lightvolcellsizev) + 1;
+    var _lightvolnx = bspdata[? "lightvols-size-x"];
+    var _lightvolny = bspdata[? "lightvols-size-y"];
+    var _lightvolnz = bspdata[? "lightvols-size-z"];
     
     zbsp_append_log(bspdata, "Lightvol entries number calculated : " + string(_lightvolnx * _lightvolny * _lightvolnz));
     zbsp_append_log(bspdata, "Lightvol actual entries according to DIRENTRY : " + string(bspdata[? "lightvols-num"]));
@@ -583,9 +600,9 @@ if (builddebugmesh)
                 var _lvolidx = _z * (_lightvolnx * _lightvolny) + _y * (_lightvolnx) + _x;
                 
                 // world-space position of lightvol cube
-                var _wpx = _models[# eBSP_MODEL.BBOX_MIN_X, 0] + _x * _lightvolcellsizeh, _wpy = -_models[# eBSP_MODEL.BBOX_MIN_Y, 0] - _y * _lightvolcellsizeh, _wpz = _models[# eBSP_MODEL.BBOX_MIN_Z, 0] + _z * _lightvolcellsizev;
+                var _wpx = bspdata[? "lightvols-off-x"] + _x * _lightvolcellsizeh, _wpy = -bspdata[? "lightvols-off-y"] - _y * _lightvolcellsizeh, _wpz = bspdata[? "lightvols-off-z"] + _z * _lightvolcellsizev;
                 
-                zbsp_vb_lightmapcube(_debugVB, _wpx, _wpy, _wpz, _boxsz, _lightvols[# eBSP_LIGHTVOL.AMBIENT, _lvolidx], _lightvols[# eBSP_LIGHTVOL.DIRECTION, _lvolidx], _lightvols[# eBSP_LIGHTVOL.PHI, _lvolidx], _lightvols[# eBSP_LIGHTVOL.THETA, _lvolidx]);
+                zbsp_vb_lightmapcube(_debugVB, _wpx, _wpy, _wpz, _boxsz, make_colour_rgb(_lightvols[# eBSP_LIGHTVOL.AMBIENT_R, _lvolidx] * 255, _lightvols[# eBSP_LIGHTVOL.AMBIENT_G, _lvolidx] * 255, _lightvols[# eBSP_LIGHTVOL.AMBIENT_B, _lvolidx] * 255), make_colour_rgb(_lightvols[# eBSP_LIGHTVOL.DIRECTION_R, _lvolidx] * 255, _lightvols[# eBSP_LIGHTVOL.DIRECTION_G, _lvolidx] * 255, _lightvols[# eBSP_LIGHTVOL.DIRECTION_B, _lvolidx] * 255), _lightvols[# eBSP_LIGHTVOL.PHI, _lvolidx], _lightvols[# eBSP_LIGHTVOL.THETA, _lvolidx]);
             }
         }
     }

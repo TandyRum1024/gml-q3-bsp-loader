@@ -154,8 +154,12 @@ enum eBSP_LIGHTMAP // Lightmap data index helper
 }
 enum eBSP_LIGHTVOL // Lightvol data index helper
 {
-    AMBIENT = 0,
-    DIRECTION,
+    AMBIENT_R = 0,
+    AMBIENT_G,
+    AMBIENT_B,
+    DIRECTION_R,
+    DIRECTION_G,
+    DIRECTION_B,
     PHI, // spherical coordinates, phi/theta component
     THETA
 }

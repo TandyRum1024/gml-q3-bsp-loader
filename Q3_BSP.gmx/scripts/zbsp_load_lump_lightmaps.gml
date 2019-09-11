@@ -31,7 +31,7 @@ zbsp_append_log(argument1, "LIGHTMAP BUILDING BEGIN!");
 show_debug_message("LIGHTMAP BUILDING BEGIN!");
 var _time = get_timer();
 var _lmapoff = 16384; // lightmap's each channels size (in bytes)
-var _lmapgamma = true; // lightmap gamma shift
+var _lmapgamma = true; // lightmap gamma correction
 
 var _surf = surface_create(128, 128);
 for (var i=0; i<_num; i++)

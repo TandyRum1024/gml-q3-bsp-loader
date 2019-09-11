@@ -222,6 +222,29 @@ display_reset(8, false);
           </argument>
         </arguments>
       </action>
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>/// Summon billboards handler
+modelHandlerInst = instance_create(0, 0, oModelHandler);
+billboardInst = instance_create(0, 0, oBillboard);
+</string>
+          </argument>
+        </arguments>
+      </action>
     </event>
     <event eventtype="1" enumb="0">
       <action>
@@ -318,6 +341,15 @@ if (BSPMapLoaded)
         }
         
         camTilt += _inputside * 0.5;
+        
+        // place billboards
+        if (mouse_check_button_pressed(mb_right))
+        {
+            var _i = instance_create(x, y, oBillboard);
+            _i.x = camX;
+            _i.y = camY;
+            _i.z = camZ;
+        }
     }
     else
     {
@@ -402,6 +434,30 @@ if (BSPMapLoaded)
           </argument>
         </arguments>
       </action>
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>/// (Debug) Update billboard
+billboardInst.x = camX + camFwdX * 128;
+billboardInst.y = camY + camFwdY * 128;
+billboardInst.z = camZ + camFwdZ * 128;
+</string>
+          </argument>
+        </arguments>
+      </action>
     </event>
     <event eventtype="8" enumb="76">
       <action>
@@ -451,6 +507,30 @@ if (BSPMustLoad)
     display_reset(8, false);
     d3d_start();
 }
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+    <event eventtype="8" enumb="72">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>/// Set camera
+d3d_set_projection_ext(camX, camY, camZ, camX + camFwdX, camY + camFwdY, camZ + camFwdZ, camUpX, camUpY, camUpZ, 90, window_get_width() / window_get_height(), 1, 16000);
 </string>
           </argument>
         </arguments>
@@ -657,28 +737,6 @@ iui_align_pop();
       </action>
     </event>
     <event eventtype="8" enumb="0">
-      <action>
-        <libid>1</libid>
-        <id>603</id>
-        <kind>7</kind>
-        <userelative>0</userelative>
-        <isquestion>0</isquestion>
-        <useapplyto>-1</useapplyto>
-        <exetype>2</exetype>
-        <functionname></functionname>
-        <codestring></codestring>
-        <whoName>self</whoName>
-        <relative>0</relative>
-        <isnot>0</isnot>
-        <arguments>
-          <argument>
-            <kind>1</kind>
-            <string>/// Set camera
-d3d_set_projection_ext(camX, camY, camZ, camX + camFwdX, camY + camFwdY, camZ + camFwdZ, camUpX, camUpY, camUpZ, 90, window_get_width() / window_get_height(), 1, 16000);
-</string>
-          </argument>
-        </arguments>
-      </action>
       <action>
         <libid>1</libid>
         <id>603</id>
